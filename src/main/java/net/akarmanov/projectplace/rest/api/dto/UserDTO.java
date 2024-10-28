@@ -12,6 +12,7 @@ public record UserDTO(
         String middleName,
         String phoneNumber,
         String telegramId,
+        String email,
         UserRole role,
         UserPhotoDto photo,
         boolean enabled) {

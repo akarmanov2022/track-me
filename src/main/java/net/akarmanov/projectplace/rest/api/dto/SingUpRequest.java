@@ -1,10 +1,7 @@
 package net.akarmanov.projectplace.rest.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Data;
 
@@ -39,6 +36,10 @@ public class SingUpRequest {
     @Schema(description = "Telegram ID.")
     @NotBlank(message = "Telegram ID не может быть null.")
     private String telegramId;
+
+    @Email
+    @Schema(description = "Адрес электронной почты.")
+    private String email;
 
     @Schema(description = "Роль.")
     @NotNull(message = "Роль не может быть null.")
