@@ -40,6 +40,7 @@ class UserServiceImplIntegrationTest {
         user = new User();
         user.setPassword("password");
         user.setFirstName("John");
+        user.setEmail("john@example.com");
         user.setLastName("Doe");
         user.setMiddleName("Middle");
         user.setPhoneNumber("+71234567890");
@@ -76,6 +77,7 @@ class UserServiceImplIntegrationTest {
                 .firstName("Jane")
                 .lastName("Doe")
                 .middleName("Middle")
+                .email("john@example.com")
                 .phoneNumber("+79876543210")
                 .telegramId("newTelegramId")
                 .password("newPassword")
@@ -106,6 +108,7 @@ class UserServiceImplIntegrationTest {
                 .firstName("John")
                 .lastName("Smith")
                 .middleName("Middle")
+                .email("john@example.com")
                 .phoneNumber("+79876543210")
                 .telegramId("newTelegramId")
                 .password("newPassword")

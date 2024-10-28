@@ -365,3 +365,22 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                   defaultValueBoolean: false
+  - changeSet:
+      id: project-place-11
+      author: akarmanov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: users
+                columnName: email
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    unique: true
+                    nullable: false
