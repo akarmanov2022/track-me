@@ -117,8 +117,18 @@ public class TeamCardsServiceImpl implements TeamCardsService {
         teamCardsRepository.deleteByIdAndUserId(id, userId);
     }
 
+    @Override
+    public TeamCard getTeamCardEntity(UUID id) {
+        return get(id);
+    }
+
+    @Override
+    public TeamCard getTeamCardEntity(UUID id, UUID userId) {
+        return get(id, userId);
+    }
+
     private TeamCard get(UUID teamCardId, UUID userId) {
         return teamCardsRepository.findByIdAndUserId(teamCardId, userId)
-                .orElseThrow(() -> new TeamCardNotFoundException(teamCardId));
+                .orElseThrow(() -> new TeamCardNotFoundException(teamCardId, userId));
     }
 }

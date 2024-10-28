@@ -1,5 +1,6 @@
 package net.akarmanov.projectplace.services.teamcard;
 
+import net.akarmanov.projectplace.domain.TeamCard;
 import net.akarmanov.projectplace.rest.api.teamcard.dto.TeamCardCreateOrUpdateDto;
 import net.akarmanov.projectplace.rest.api.teamcard.dto.TeamCardDto;
 import org.springframework.data.domain.Page;
@@ -27,4 +28,11 @@ public interface TeamCardsService {
     TeamCardDto getTeamCard(UUID id, UUID userId);
 
     void deleteTeamCard(UUID id, UUID userId);
+
+    TeamCard getTeamCardEntity(UUID id);
+
+    TeamCard getTeamCardEntity(UUID id, UUID userId);
+
+
+
 }
