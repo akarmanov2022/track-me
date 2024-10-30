@@ -12,6 +12,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 
 import java.time.OffsetDateTime;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -50,7 +51,7 @@ class MeetingRestControllerTest extends BaseApplicationTest {
                 .startDate(OffsetDateTime.now())
                 .build();
 
-        mockMvc.perform(post("/api/v1/meeting/create")
+        mockMvc.perform(post("/api/v1/meetings/create")
                         .param("teamCardId", teamCard.getId().toString())
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(meetingCreateDto)))
@@ -70,12 +71,22 @@ class MeetingRestControllerTest extends BaseApplicationTest {
                 .startDate(OffsetDateTime.now())
                 .build();
 
-        mockMvc.perform(post("/api/v1/meeting/create")
+        mockMvc.perform(post("/api/v1/meetings/create")
                         .param("teamCardId", "00000000-0000-0000-0000-000000000000")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(meetingCreateDto)))
                 .andDo(print())
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType("application/json"));
+    }
+
+    @Test
+    void getMeetings_success() throws Exception {
+        mockMvc.perform(get("/api/v1/meetings")
+                        .param("teamCardId", teamCard.getId().toString()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$.content").isArray());
     }
 }
