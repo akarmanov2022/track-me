@@ -17,7 +17,7 @@ Cервис для ведения отчётности трекеров в хо�
    SHA512 (сгенерировать можно [тут](https://emn178.github.io/online-tools/sha512.html))
 3. Выполните команду для запуска контейнеров:
     ```shell
-    docker-compose up
+    docker compose up -d
     ```
 
 ### Локально
