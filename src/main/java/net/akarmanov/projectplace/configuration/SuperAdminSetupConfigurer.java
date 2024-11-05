@@ -27,6 +27,7 @@ public class SuperAdminSetupConfigurer {
                     .telegramId(superAdminUsername)
                     .password(passwordEncoder.encode(superAdminPassword))
                     .role(UserRole.SUPER_ADMIN)
+                    .email("")
                     .enabled(true)
                     .build();
             userService.createUser(superAdmin);
