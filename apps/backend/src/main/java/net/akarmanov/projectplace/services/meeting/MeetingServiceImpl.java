@@ -1,6 +1,7 @@
 package net.akarmanov.projectplace.services.meeting;
 
 import lombok.RequiredArgsConstructor;
+import net.akarmanov.projectplace.domain.spec.MeetingSpecification;
 import net.akarmanov.projectplace.models.MeetingStatus;
 import net.akarmanov.projectplace.repos.MeetingRepository;
 import net.akarmanov.projectplace.rest.api.meeting.MeetingCreateDto;
@@ -50,7 +51,7 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     public Page<MeetingDto> getMeetingsForCurrentUser(Pageable pageable) {
         var user = userService.getCurrentUser();
-        return meetingRepository.findAll(where(userEquals(user.getId())), pageable)
+        return meetingRepository.findAll(where(MeetingSpecification.userEquals(user.getId())), pageable)
                 .map(meetingMapper::mapToDto);
     }
 
@@ -59,7 +60,7 @@ public class MeetingServiceImpl implements MeetingService {
     public MeetingDto updateMeeting(UUID meetingId, UUID teamCardId, MeetingUpdateDto meetingUpdateDto) {
         var user = userService.getCurrentUser();
         var meeting = meetingRepository.findOne(Specification.where(userEquals(user.getId()))
-                        .and(teamCardIdEquals(teamCardId)).and(meetingIdEquals(meetingId)))
+                        .and(MeetingSpecification.teamCardIdEquals(teamCardId)).and(MeetingSpecification.meetingIdEquals(meetingId)))
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId, teamCardId));
         meetingMapper.updateEntity(meeting, meetingUpdateDto);
         meeting = meetingRepository.save(meeting);
