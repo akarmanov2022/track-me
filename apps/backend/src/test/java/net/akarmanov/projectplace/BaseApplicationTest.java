@@ -3,6 +3,7 @@ package net.akarmanov.projectplace;
 import net.akarmanov.projectplace.domain.User;
 import net.akarmanov.projectplace.models.UserRole;
 import net.akarmanov.projectplace.repos.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -20,26 +21,13 @@ import org.springframework.test.web.servlet.MockMvc;
         })
 public abstract class BaseApplicationTest {
 
-    public static final String USERNAME = "BASE_TRACKER";
+    public static final String USERNAME = "superadmin";
 
     @Autowired
     protected MockMvc mockMvc;
 
-    @Autowired
-    private UserRepository userRepository;
-
     protected User user;
 
-    @BeforeEach
-    void initUser() {
-        user = userRepository.save(User.builder()
-                .enabled(true)
-                .firstName("Иван")
-                .lastName("Иванов")
-                .telegramId(USERNAME)
-                .password("123456")
-                .role(UserRole.TRACKER)
-                .build()
-        );
-    }
+    @Autowired
+    private UserRepository userRepository;
 }

@@ -40,6 +40,7 @@ class TeamCardsRestControllerImplTest extends BaseApplicationTest {
                 .firstName("Иван")
                 .lastName("Иванов")
                 .telegramId(USERNAME)
+                        .email("")
                 .password("123456")
                 .role(UserRole.TRACKER)
                 .build()
