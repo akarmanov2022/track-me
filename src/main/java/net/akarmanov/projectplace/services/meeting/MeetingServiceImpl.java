@@ -65,4 +65,14 @@ public class MeetingServiceImpl implements MeetingService {
         meeting = meetingRepository.save(meeting);
         return meetingMapper.mapToDto(meeting);
     }
+
+    @Override
+    @Transactional
+    public void deleteMeeting(UUID meetingId) {
+        var user = userService.getCurrentUser();
+        var meeting = meetingRepository.findOne(Specification.where(userEquals(user.getId()))
+                        .and(meetingIdEquals(meetingId)))
+                .orElseThrow(() -> new MeetingNotFoundException(meetingId));
+        meetingRepository.delete(meeting);
+    }
 }

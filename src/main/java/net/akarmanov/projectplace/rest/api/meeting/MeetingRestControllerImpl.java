@@ -35,4 +35,10 @@ public class MeetingRestControllerImpl implements MeetingRestController {
         return ResponseEntity.ok(meeting);
     }
 
+    @Override
+    public ResponseEntity<Void> deleteMeeting(UUID meetingId) {
+        meetingService.deleteMeeting(meetingId);
+        return ResponseEntity.ok().build();
+    }
+
 }

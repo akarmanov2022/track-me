@@ -14,4 +14,6 @@ public interface MeetingService {
     Page<MeetingDto> getMeetingsForCurrentUser(Pageable pageable);
 
     MeetingDto updateMeeting(UUID meetingId, UUID teamCardId, MeetingUpdateDto meetingCreateDto);
+
+    void deleteMeeting(UUID meetingId);
 }

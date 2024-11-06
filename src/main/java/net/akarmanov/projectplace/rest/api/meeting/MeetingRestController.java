@@ -30,4 +30,8 @@ public interface MeetingRestController {
     ResponseEntity<MeetingDto> updateMeeting(@PathVariable UUID meetingId,
                                              @RequestParam UUID teamCardId,
                                              @Valid MeetingUpdateDto meetingCreateDto);
+
+    @DeleteMapping(value = "/{meetingId}/delete")
+    @Operation(summary = "Удаление встречи команды")
+    ResponseEntity<Void> deleteMeeting(@PathVariable UUID meetingId);
 }
