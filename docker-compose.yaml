@@ -14,7 +14,7 @@ services:
     container_name: project-place-backend
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: apps/backend/Dockerfile
     depends_on:
       - postgres
     environment:
