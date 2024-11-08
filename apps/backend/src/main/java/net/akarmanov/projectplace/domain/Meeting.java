@@ -41,7 +41,7 @@ public class Meeting {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", nullable = false)
-    private TeamCard team;
+    private TeamCard teamCard;
 
     @OneToMany(mappedBy = "meeting")
     private Set<Task> meetingTasks;

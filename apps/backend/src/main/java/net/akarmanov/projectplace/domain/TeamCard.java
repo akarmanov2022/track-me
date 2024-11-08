@@ -37,7 +37,7 @@ public class TeamCard {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToMany(mappedBy = "team")
+    @OneToMany(mappedBy = "teamCard", cascade = CascadeType.ALL)
     private Set<Meeting> teamMeetings;
 
     @ManyToMany(mappedBy = "streamsTeamCardTeamCards")

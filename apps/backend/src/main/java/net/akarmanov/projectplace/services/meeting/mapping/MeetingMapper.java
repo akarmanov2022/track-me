@@ -1,0 +1,24 @@
+package net.akarmanov.projectplace.services.meeting.mapping;
+
+import net.akarmanov.projectplace.domain.Meeting;
+import net.akarmanov.projectplace.rest.api.meeting.MeetingCreateDto;
+import net.akarmanov.projectplace.rest.api.meeting.MeetingDto;
+import net.akarmanov.projectplace.rest.api.meeting.MeetingUpdateDto;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+
+@Mapper(componentModel = "spring")
+public interface MeetingMapper {
+    @Mapping(target = "teamCard", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "screenshot", ignore = true)
+    @Mapping(target = "meetingTasks", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    Meeting mapToEntity(MeetingCreateDto meetingCreateDto);
+
+    @Mapping(target = "teamCardId", source = "teamCard.id")
+    MeetingDto mapToDto(Meeting meeting);
+
+    void updateEntity(@MappingTarget Meeting meeting, MeetingUpdateDto meetingCreateDto);
+}
