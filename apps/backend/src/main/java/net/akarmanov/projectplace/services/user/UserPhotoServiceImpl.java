@@ -47,7 +47,9 @@ class UserPhotoServiceImpl implements UserPhotoService {
     @Override
     @Transactional
     public void deletePhoto(UUID userId) {
-        userPhotoRepository.deleteByUserId(userId);
+        var userPhoto = userPhotoRepository.findByUserId(userId)
+                .orElseThrow(() -> new PhotoNotFoundException(userId));
+        userPhotoRepository.delete(userPhoto);
     }
 
     @Override

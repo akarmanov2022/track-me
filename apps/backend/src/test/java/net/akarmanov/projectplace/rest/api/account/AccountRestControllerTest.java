@@ -19,39 +19,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WithMockUser(username = AccountRestControllerTest.TELEGRAM_ID, roles = "TRACKER")
+@WithMockUser(username = BaseApplicationTest.USERNAME, roles = "TRACKER")
 class AccountRestControllerTest extends BaseApplicationTest {
-
-    public static final String PASSWORD = "password";
-
-    public static final String TELEGRAM_ID = "telegramId";
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
-    private User user;
-
-    @BeforeEach
-    void setUp() {
-        user = userRepository.save(User.builder()
-                .password(passwordEncoder.encode(PASSWORD))
-                .telegramId(TELEGRAM_ID)
-                .enabled(true)
-                .firstName("John")
-                .lastName("Doe")
-                .middleName("Middle")
-                .phoneNumber("+71234567890")
-                .role(UserRole.TRACKER)
-                .build());
-    }
-
-    @AfterEach
-    void tearDown() {
-        userRepository.deleteAll();
-    }
 
     @Test
     void getCurrentUserInfo_success() throws Exception {
