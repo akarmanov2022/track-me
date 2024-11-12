@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
         })
 public abstract class BaseApplicationTest {
 
-    public static final String USERNAME = "superadmin";
+    public static final String USERNAME = "test_superadmin";
 
     @Autowired
     protected MockMvc mockMvc;
@@ -30,4 +30,23 @@ public abstract class BaseApplicationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @BeforeEach
+    void initUser() {
+        user = userRepository.save(User.builder()
+                .enabled(true)
+                .firstName("Иван")
+                .lastName("Иванов")
+                .telegramId(USERNAME)
+                .email("")
+                .password("123456")
+                .role(UserRole.SUPER_ADMIN)
+                .build()
+        );
+    }
+
+    @AfterEach()
+    void deleteUser() {
+        userRepository.delete(user);
+    }
 }
