@@ -20,36 +20,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WithMockUser(username = TeamCardsRestControllerImplTest.USERNAME, roles = {"TRACKER"})
+@WithMockUser(username = BaseApplicationTest.USERNAME, roles = {"SUPER_ADMIN"})
 class TeamCardsRestControllerImplTest extends BaseApplicationTest {
-
-    public static final String USERNAME = "TRACKER";
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private TeamCardsRepository teamCardsRepository;
 
-    private User user;
-
-    @BeforeEach
-    void setUp() {
-        user = userRepository.save(User.builder()
-                .enabled(true)
-                .firstName("Иван")
-                .lastName("Иванов")
-                .telegramId(USERNAME)
-                        .email("")
-                .password("123456")
-                .role(UserRole.TRACKER)
-                .build()
-        );
-    }
-
     @AfterEach
     void tearDown() {
-        userRepository.deleteAll();
+        teamCardsRepository.deleteAll();
     }
 
     @Test

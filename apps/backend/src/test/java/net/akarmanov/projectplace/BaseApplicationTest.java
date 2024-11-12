@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,13 +24,18 @@ public abstract class BaseApplicationTest {
 
     public static final String USERNAME = "test_superadmin";
 
+    public static final String PASSWORD = "123456";
+
     @Autowired
     protected MockMvc mockMvc;
 
     protected User user;
 
     @Autowired
-    private UserRepository userRepository;
+    protected UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void initUser() {
@@ -39,7 +45,7 @@ public abstract class BaseApplicationTest {
                 .lastName("Иванов")
                 .telegramId(USERNAME)
                 .email("")
-                .password("123456")
+                .password(passwordEncoder.encode(PASSWORD))
                 .role(UserRole.SUPER_ADMIN)
                 .build()
         );
