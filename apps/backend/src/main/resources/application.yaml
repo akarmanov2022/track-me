@@ -30,5 +30,6 @@ springdoc:
 
 app:
   superadmin:
+    email: ${ADMIN_EMAIL:superadmin@superadmin.superadmin}
     username: ${ADMIN_USERNAME:superadmin}
     password: ${ADMIN_PASSWORD:superadmin}
