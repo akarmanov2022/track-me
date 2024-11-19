@@ -20,6 +20,9 @@ public class SuperAdminSetupConfigurer {
     @Value("${app.superadmin.password}")
     private String superAdminPassword;
 
+    @Value("${app.superadmin.email}")
+    private String getSuperAdminEmail;
+
     @PostConstruct
     public void setupSuperAdmin() {
         if (!userService.existsByUsername(superAdminUsername)) {
@@ -27,7 +30,7 @@ public class SuperAdminSetupConfigurer {
                     .telegramId(superAdminUsername)
                     .password(passwordEncoder.encode(superAdminPassword))
                     .role(UserRole.SUPER_ADMIN)
-                    .email("")
+                    .email(getSuperAdminEmail)
                     .enabled(true)
                     .build();
             userService.createUser(superAdmin);
