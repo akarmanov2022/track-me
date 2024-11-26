@@ -70,8 +70,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getCurrentUser() {
-        var username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return getUserByTelegramId(username);
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return (User) auth.getPrincipal();
     }
 
     @Override

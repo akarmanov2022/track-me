@@ -60,7 +60,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/v1/admin/**").hasRole(ADMIN.toString())
                         .requestMatchers("/api/v1/super-admin/**").hasRole(SUPER_ADMIN.toString())
                         .anyRequest().authenticated())
-                .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+                .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(handler -> handler.authenticationEntryPoint(authenticationEntryPoint));

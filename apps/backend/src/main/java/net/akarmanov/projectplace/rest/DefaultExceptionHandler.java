@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.nio.file.AccessDeniedException;
+
 @ControllerAdvice
 public class DefaultExceptionHandler {
     @ResponseBody
@@ -69,4 +71,14 @@ public class DefaultExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(restError);
     }
 
+    @ResponseBody
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<RestError> handleAccessDeniedException(AccessDeniedException ex) {
+        var restError = RestError.builder()
+                .code(HttpStatus.FORBIDDEN.toString())
+                .message(ex.getMessage())
+                .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(restError);
+    }
 }

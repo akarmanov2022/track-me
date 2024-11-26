@@ -1,37 +1,31 @@
 package net.akarmanov.projectplace.services.teamcard;
 
 import net.akarmanov.projectplace.domain.TeamCard;
-import net.akarmanov.projectplace.rest.api.teamcard.dto.TeamCardCreateOrUpdateDto;
-import net.akarmanov.projectplace.rest.api.teamcard.dto.TeamCardDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
 public interface TeamCardsService {
-    TeamCardDto createTeamCard(TeamCardCreateOrUpdateDto teamCardDto);
+    TeamCard createTeamCard(TeamCard createTeamCardDto);
 
-    TeamCardDto updateTeamCard(UUID teamCardId, TeamCardCreateOrUpdateDto teamCardDto);
+    TeamCard updateTeamCard(UUID teamCardId, TeamCard updateTeamCardDto);
 
-    Page<TeamCardDto> getTeamCards(String name, String status, Pageable pageable);
+    Page<TeamCard> getTeamCards(String name, String status, Pageable pageable, UUID userId);
 
-    TeamCardDto getTeamCard(UUID id);
+    TeamCard getTeamCard(UUID id);
 
     void deleteTeamCard(UUID id);
 
-    TeamCardDto createTeamCard(TeamCardCreateOrUpdateDto teamCardDto, UUID userId);
+    TeamCard createTeamCard(TeamCard teamCard, UUID userId);
 
-    TeamCardDto updateTeamCard(UUID teamCardId, TeamCardCreateOrUpdateDto teamCardDto, UUID userId);
+    TeamCard updateTeamCard(UUID teamCardId, TeamCard teamCard, UUID userId);
 
-    Page<TeamCardDto> findAll(String name, String status, Pageable pageable);
+    Page<TeamCard> findAll(String name, String status, Pageable pageable);
 
-    TeamCardDto getTeamCard(UUID id, UUID userId);
+    TeamCard getTeamCard(UUID id, UUID userId);
 
     void deleteTeamCard(UUID id, UUID userId);
-
-    TeamCard getTeamCardEntity(UUID id);
-
-    TeamCard getTeamCardEntity(UUID id, UUID userId);
 
 
 

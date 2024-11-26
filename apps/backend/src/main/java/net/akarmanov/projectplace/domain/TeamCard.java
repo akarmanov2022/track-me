@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import net.akarmanov.projectplace.models.TeamCardStatus;
 import org.hibernate.annotations.UuidGenerator;
+import org.springframework.security.acls.model.ObjectIdentity;
 
+import java.io.Serializable;
 import java.util.Set;
 import java.util.UUID;
 
@@ -15,7 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "team_cards")
-public class TeamCard {
+public class TeamCard implements ObjectIdentity {
 
     @Id
     @Column(nullable = false, updatable = false)
@@ -31,7 +33,7 @@ public class TeamCard {
 
     @Column(length = 32)
     @Enumerated(EnumType.STRING)
-    private TeamCardStatus status;
+    private TeamCardStatus status = TeamCardStatus.OK;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -43,4 +45,13 @@ public class TeamCard {
     @ManyToMany(mappedBy = "streamsTeamCardTeamCards")
     private Set<Stream> streamsTeamCardStreams;
 
+    @Override
+    public Serializable getIdentifier() {
+        return getId();
+    }
+
+    @Override
+    public String getType() {
+        return getClass().getCanonicalName();
+    }
 }

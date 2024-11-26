@@ -38,8 +38,7 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     @Transactional
     public MeetingDto createMeeting(UUID teamCardId, MeetingCreateDto meetingCreateDto) {
-        var user = userService.getCurrentUser();
-        var teamCard = teamCardsService.getTeamCardEntity(teamCardId, user.getId());
+        var teamCard = teamCardsService.getTeamCard(teamCardId);
         var meeting = meetingMapper.mapToEntity(meetingCreateDto);
 
         meeting.setTeamCard(teamCard);
