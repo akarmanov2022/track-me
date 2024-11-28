@@ -5,6 +5,7 @@ import net.akarmanov.projectplace.domain.TeamCard;
 import net.akarmanov.projectplace.models.TeamCardStatus;
 import net.akarmanov.projectplace.repos.TeamCardsRepository;
 import net.akarmanov.projectplace.services.teamcard.TeamCardsService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -28,6 +29,11 @@ class TeamCardsRestControllerImplTest extends BaseApplicationTest {
 
     @Autowired
     private TeamCardsRepository teamCardsRepository;
+
+    @AfterEach
+    void tearDown() {
+        teamCardsRepository.deleteAll();
+    }
 
     @Test
     @WithMockUser(value = "test_tracker")

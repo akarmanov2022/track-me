@@ -4,6 +4,7 @@ import net.akarmanov.projectplace.domain.User;
 import net.akarmanov.projectplace.models.UserRole;
 import net.akarmanov.projectplace.repos.UserRepository;
 import net.akarmanov.projectplace.services.user.UserService;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
@@ -31,7 +32,8 @@ import org.springframework.test.web.servlet.MockMvc;
         properties = {
                 "JWT_SECRET=12345678905675675674564564566756756756745645656"
         })
-@Sql(value = {"classpath:init-test-schema.sql", "classpath:initial-data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
+@Sql(value = {"classpath:init-test-schema.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
+@Sql(value = {"classpath:initial-data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(value = "classpath:cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_CLASS)
 public abstract class BaseApplicationTest {
 
@@ -64,8 +66,8 @@ public abstract class BaseApplicationTest {
         );
     }
 
-    @AfterEach()
+    @AfterEach
     void deleteUser() {
-        userRepository.delete(user);
+        userRepository.deleteAll();
     }
 }

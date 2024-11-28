@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WithMockUser(BaseApplicationTest.USERNAME)
 class MeetingRestControllerTest extends BaseApplicationTest {
 
     @Autowired
@@ -36,7 +37,6 @@ class MeetingRestControllerTest extends BaseApplicationTest {
         teamCard = teamCardsService.createTeamCard(TeamCard.builder()
                 .name("Test")
                 .description("Test")
-                .user(user)
                 .build());
     }
 
