@@ -34,6 +34,9 @@ springdoc:
   enable-spring-security: true
 
 app:
+  acl:
+    sid-identity-query: "select currval(pg_get_serial_sequence('acl_sid', 'id'))"
+    class-identity-query: "select currval(pg_get_serial_sequence('acl_sid', 'id'))"
   superadmin:
     email: ${ADMIN_EMAIL:superadmin@superadmin.superadmin}
     username: ${ADMIN_USERNAME:superadmin}

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.WithUserDetails;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -20,7 +21,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WithMockUser(username = BaseApplicationTest.USERNAME, roles = {"SUPER_ADMIN"})
 class TeamCardsRestControllerImplTest extends BaseApplicationTest {
 
     @Autowired
@@ -32,6 +32,7 @@ class TeamCardsRestControllerImplTest extends BaseApplicationTest {
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"}, username = BaseApplicationTest.USERNAME)
     void createTeamCard_success() throws Exception {
         mockMvc.perform(post("/api/v1/team-cards/create")
                         .contentType(MediaType.APPLICATION_JSON)

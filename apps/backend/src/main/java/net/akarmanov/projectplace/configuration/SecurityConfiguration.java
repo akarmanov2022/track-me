@@ -56,7 +56,6 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-resources/*", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/v1/tracker/**").hasRole(TRACKER.toString())
                         .requestMatchers("/api/v1/admin/**").hasRole(ADMIN.toString())
                         .requestMatchers("/api/v1/super-admin/**").hasRole(SUPER_ADMIN.toString())
                         .anyRequest().authenticated())
@@ -69,7 +68,7 @@ public class SecurityConfiguration {
 
     private AuthenticationProvider authenticationProvider() {
         var daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.setUserDetailsService(userService.getDetailsService());
+        daoAuthenticationProvider.setUserDetailsService(userService);
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
         return daoAuthenticationProvider;
     }
@@ -78,7 +77,7 @@ public class SecurityConfiguration {
     public AuthenticationManager authenticationManager(
             PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(userService.getDetailsService());
+        authenticationProvider.setUserDetailsService(userService);
         authenticationProvider.setPasswordEncoder(passwordEncoder);
 
         ProviderManager providerManager = new ProviderManager(authenticationProvider);

@@ -17,7 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "team_cards")
-public class TeamCard implements ObjectIdentity {
+public class TeamCard {
 
     @Id
     @Column(nullable = false, updatable = false)
@@ -33,7 +33,7 @@ public class TeamCard implements ObjectIdentity {
 
     @Column(length = 32)
     @Enumerated(EnumType.STRING)
-    private TeamCardStatus status = TeamCardStatus.OK;
+    private TeamCardStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -44,14 +44,4 @@ public class TeamCard implements ObjectIdentity {
 
     @ManyToMany(mappedBy = "streamsTeamCardTeamCards")
     private Set<Stream> streamsTeamCardStreams;
-
-    @Override
-    public Serializable getIdentifier() {
-        return getId();
-    }
-
-    @Override
-    public String getType() {
-        return getClass().getCanonicalName();
-    }
 }

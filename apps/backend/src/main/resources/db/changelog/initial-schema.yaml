@@ -2,9 +2,9 @@ databaseChangeLog:
   - changeSet:
       id: project-place-1
       author: Arseniy Karmanov
-      dbms: postgresql
       preConditions:
-        - not:
+        - onFail: MARK_RAN
+          not:
             - tableExists:
                 tableName: users
       changes:
@@ -53,10 +53,11 @@ databaseChangeLog:
             tableName: users
             constraintName: uq_users_telegram_phone
   - changeSet:
-      id: project-place-4
+      id: project-place-2
       author: Arseniy Karmanov
       preConditions:
-        - not:
+        - onFail: MARK_RAN
+          not:
             - tableExists:
                 tableName: team_cards
       changes:
@@ -68,11 +69,6 @@ databaseChangeLog:
                   type: UUID
                   constraints:
                     primaryKey: true
-                    nullable: false
-              - column:
-                  name: user_id
-                  type: UUID
-                  constraints:
                     nullable: false
               - column:
                   name: name
@@ -89,17 +85,17 @@ databaseChangeLog:
                   type: VARCHAR(32)
                   constraints:
                     nullable: false
-        - addForeignKeyConstraint:
-            baseTableName: team_cards
-            baseColumnNames: user_id
-            referencedTableName: users
-            referencedColumnNames: id
-            constraintName: fk_team_cards_users
+              - column:
+                  name: user_id
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
   - changeSet:
-      id: project-place-6
+      id: project-place-3
       author: Arseniy Karmanov
       preConditions:
-        - not:
+        - onFail: MARK_RAN
+          not:
             - tableExists:
                 tableName: meetings
       changes:
@@ -149,10 +145,11 @@ databaseChangeLog:
             referencedColumnNames: id
             constraintName: fk_meetings_team
   - changeSet:
-      id: project-place-3
+      id: project-place-4
       author: Arseniy Karmanov
       preConditions:
-        - not:
+        - onFail: MARK_RAN
+          not:
             - tableExists:
                 tableName: streams
       changes:
@@ -189,7 +186,8 @@ databaseChangeLog:
       id: project-place-5
       author: Arseniy Karmanov
       preConditions:
-        - not:
+        - onFail: MARK_RAN
+          not:
             - tableExists:
                 tableName: tasks
       changes:
@@ -234,10 +232,11 @@ databaseChangeLog:
             referencedColumnNames: id
             constraintName: fk_tasks_meeting
   - changeSet:
-      id: project-place-7
+      id: project-place-6
       author: Arseniy Karmanov
       preConditions:
-        - not:
+        - onFail: MARK_RAN
+          not:
             - tableExists:
                 tableName: streams_team_cards
       changes:
@@ -274,7 +273,8 @@ databaseChangeLog:
       id: project-place-9
       author: Arseniy Karmanov
       preConditions:
-        - not:
+        - onFail: MARK_RAN
+          not:
             - tableExists:
                 tableName: streams_users
       changes:
@@ -311,7 +311,8 @@ databaseChangeLog:
       id: project-place-8
       author: akarmanov
       preConditions:
-        - not:
+        - onFail: MARK_RAN
+          not:
             - tableExists:
                 tableName: user_photos
       changes:

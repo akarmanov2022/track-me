@@ -17,7 +17,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WithMockUser(username = BaseApplicationTest.USERNAME, roles = {"SUPER_ADMIN"})
 class UserPhotoRestControllerImplTest extends BaseApplicationTest {
 
     @Autowired

@@ -11,7 +11,8 @@ import net.akarmanov.projectplace.services.exceptions.UserNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -71,12 +72,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
-        return (User) auth.getPrincipal();
-    }
-
-    @Override
-    public UserDetailsService getDetailsService() {
-        return this::getUserByTelegramId;
+        return getUserByTelegramId(auth.getName());
     }
 
     @Override
@@ -114,5 +110,10 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
         user.setEnabled(enabled);
         userRepository.save(user);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return getUserByTelegramId(username);
     }
 }

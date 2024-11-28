@@ -1,7 +1,8 @@
-package net.akarmanov.projectplace.configuration;
+package net.akarmanov.projectplace.configuration.acl;
 
 import lombok.RequiredArgsConstructor;
 import net.akarmanov.projectplace.services.acl.PostgresJdbcMutableAclService;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,9 +11,7 @@ import org.springframework.security.access.expression.method.MethodSecurityExpre
 import org.springframework.security.acls.AclPermissionEvaluator;
 import org.springframework.security.acls.domain.*;
 import org.springframework.security.acls.jdbc.BasicLookupStrategy;
-import org.springframework.security.acls.jdbc.JdbcMutableAclService;
 import org.springframework.security.acls.jdbc.LookupStrategy;
-import org.springframework.security.acls.model.AclService;
 import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.acls.model.PermissionGrantingStrategy;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -23,20 +22,22 @@ import javax.sql.DataSource;
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@EnableConfigurationProperties(AclAppProperties.class)
 public class AclMethodSecurityConfiguration {
 
     private final DataSource dataSource;
+    private final AclAppProperties properties;
 
     @Bean
     public MethodSecurityExpressionHandler createExpressionHandler() {
         var expressionHandler = new DefaultMethodSecurityExpressionHandler();
-        expressionHandler.setPermissionEvaluator(new AclPermissionEvaluator(aclService()));
+        expressionHandler.setPermissionEvaluator(new AclPermissionEvaluator(mutableAclService()));
         return expressionHandler;
     }
 
     @Bean
-    public MutableAclService aclService() {
-        return new PostgresJdbcMutableAclService(dataSource, lookupStrategy(), aclCache());
+    public MutableAclService mutableAclService() {
+        return new PostgresJdbcMutableAclService(dataSource, lookupStrategy(), aclCache(), properties);
     }
 
     @Bean

@@ -1,5 +1,6 @@
 package net.akarmanov.projectplace.services.acl;
 
+import net.akarmanov.projectplace.configuration.acl.AclAppProperties;
 import org.springframework.security.acls.jdbc.JdbcMutableAclService;
 import org.springframework.security.acls.jdbc.LookupStrategy;
 import org.springframework.security.acls.model.AclCache;
@@ -7,12 +8,11 @@ import org.springframework.security.acls.model.AclCache;
 import javax.sql.DataSource;
 
 public class PostgresJdbcMutableAclService extends JdbcMutableAclService {
-    public PostgresJdbcMutableAclService(DataSource dataSource,
-                                         LookupStrategy lookupStrategy,
-                                         AclCache aclCache) {
+    public PostgresJdbcMutableAclService(DataSource dataSource, LookupStrategy lookupStrategy, AclCache aclCache,
+                                         AclAppProperties properties) {
         super(dataSource, lookupStrategy, aclCache);
-        super.setClassIdentityQuery("select currval(pg_get_serial_sequence('acl_class', 'id'))");
-        super.setSidIdentityQuery("select currval(pg_get_serial_sequence('acl_sid', 'id'))");
+        super.setClassIdentityQuery(properties.getClassIdentityQuery());
+        super.setSidIdentityQuery(properties.getSidIdentityQuery());
         super.setAclClassIdSupported(true);
     }
 }
