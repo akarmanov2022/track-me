@@ -31,7 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
         properties = {
                 "JWT_SECRET=12345678905675675674564564566756756756745645656"
         })
-@Sql(value = "classpath:init-test-schema.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
+@Sql(value = {"classpath:init-test-schema.sql", "classpath:initial-data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
 @Sql(value = "classpath:cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_CLASS)
 public abstract class BaseApplicationTest {
 

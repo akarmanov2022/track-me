@@ -2,20 +2,17 @@ package net.akarmanov.projectplace.rest.api.teamcard;
 
 import net.akarmanov.projectplace.BaseApplicationTest;
 import net.akarmanov.projectplace.domain.TeamCard;
-import net.akarmanov.projectplace.domain.User;
 import net.akarmanov.projectplace.models.TeamCardStatus;
-import net.akarmanov.projectplace.models.UserRole;
 import net.akarmanov.projectplace.repos.TeamCardsRepository;
-import net.akarmanov.projectplace.repos.UserRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import net.akarmanov.projectplace.services.teamcard.TeamCardsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.context.support.WithUserDetails;
 
 import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -23,16 +20,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class TeamCardsRestControllerImplTest extends BaseApplicationTest {
 
+    private static final UsernamePasswordAuthenticationToken superadmin = new UsernamePasswordAuthenticationToken(
+            "superadmin", "superadmin");
+
+    @Autowired
+    private TeamCardsService teamCardsService;
+
     @Autowired
     private TeamCardsRepository teamCardsRepository;
 
-    @AfterEach
-    void tearDown() {
-        teamCardsRepository.deleteAll();
-    }
-
     @Test
-    @WithMockUser(roles = {"ADMIN"}, username = BaseApplicationTest.USERNAME)
+    @WithMockUser(value = "test_tracker")
     void createTeamCard_success() throws Exception {
         mockMvc.perform(post("/api/v1/team-cards/create")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -49,6 +47,7 @@ class TeamCardsRestControllerImplTest extends BaseApplicationTest {
     }
 
     @Test
+    @WithMockUser("test_tracker")
     void createTeamCard_validationError() throws Exception {
         mockMvc.perform(post("/api/v1/team-cards/create")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -58,9 +57,9 @@ class TeamCardsRestControllerImplTest extends BaseApplicationTest {
     }
 
     @Test
+    @WithMockUser("test_tracker")
     void updateTeamCard_success() throws Exception {
-        var teamCard = teamCardsRepository.save(TeamCard.builder()
-                .user(user)
+        var teamCard = teamCardsService.createTeamCard(TeamCard.builder()
                 .status(TeamCardStatus.OK)
                 .name("Team card1")
                 .build());
@@ -78,5 +77,21 @@ class TeamCardsRestControllerImplTest extends BaseApplicationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(teamCard.getId().toString())))
                 .andExpect(jsonPath("$.name", is("Updated name")));
+    }
+
+    @Test
+    @WithMockUser(value = "test_tracker", roles = "TRACKER")
+    void getTeamCard_success() throws Exception {
+        var teamCard = teamCardsService.createTeamCard(TeamCard.builder()
+                .status(TeamCardStatus.OK)
+                .name("Team card1")
+                .build());
+
+        mockMvc.perform(get("/api/v1/team-cards/get")
+                        .param("id", teamCard.getId().toString()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(teamCard.getId().toString())))
+                .andExpect(jsonPath("$.name", is("Team card1")));
     }
 }

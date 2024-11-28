@@ -3,6 +3,7 @@ package net.akarmanov.projectplace.services.teamcard;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import net.akarmanov.projectplace.domain.TeamCard;
+import net.akarmanov.projectplace.domain.User;
 import net.akarmanov.projectplace.models.TeamCardStatus;
 import net.akarmanov.projectplace.repos.TeamCardsRepository;
 import net.akarmanov.projectplace.services.acl.AclService;
@@ -10,21 +11,21 @@ import net.akarmanov.projectplace.services.exceptions.TeamCardNotFoundException;
 import net.akarmanov.projectplace.services.user.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.domain.PrincipalSid;
-import org.springframework.security.acls.model.MutableAcl;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 import static net.akarmanov.projectplace.domain.spec.TeamCardSpecification.*;
 import static org.springframework.data.jpa.domain.Specification.where;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class TeamCardsServiceImpl implements TeamCardsService {
 
@@ -35,17 +36,17 @@ public class TeamCardsServiceImpl implements TeamCardsService {
     private final AclService aclService;
 
     @Override
-    @Transactional
     public TeamCard createTeamCard(TeamCard createTeamCard) {
+        var user = userService.getCurrentUser();
         createTeamCard.setStatus(TeamCardStatus.OK);
+        createTeamCard.setUser(user);
         createTeamCard = teamCardsRepository.save(createTeamCard);
-        createAcl(createTeamCard);
+        aclService.createAcl(createTeamCard);
         return createTeamCard;
     }
 
     @Override
-    @Transactional
-    @PreAuthorize("hasPermission(#teamCardId, 'WRITE')")
+    @PreAuthorize("hasPermission(#teamCardId, 'net.akarmanov.projectplace.domain.TeamCard', 'WRITE') or hasRole('ADMIN')")
     public TeamCard updateTeamCard(UUID teamCardId, TeamCard teamCardDto) {
         var teamCard = get(teamCardId);
         updateTeamCard(teamCardDto, teamCard);
@@ -66,38 +67,37 @@ public class TeamCardsServiceImpl implements TeamCardsService {
     }
 
     @Override
-    @PreAuthorize("hasPermission(#id, 'net.akarmanov.projectplace.domain.TeamCard', 'READ')")
+    @PreAuthorize("hasPermission(#id, 'net.akarmanov.projectplace.domain.TeamCard', 'READ') or hasRole('ADMIN')")
     public TeamCard getTeamCard(UUID id) {
         return teamCardsRepository.findById(id)
                 .orElseThrow(() -> new TeamCardNotFoundException(id));
     }
 
     @Override
-    @Transactional
-    @PreAuthorize("hasPermission(#id, 'net.akarmanov.projectplace.domain.TeamCard', 'DELETE')")
+    @PreAuthorize("hasPermission(#id, 'net.akarmanov.projectplace.domain.TeamCard', 'DELETE') or hasRole('ADMIN')")
     public void deleteTeamCard(UUID id) {
         teamCardsRepository.deleteById(id);
     }
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
-    @Transactional
     public TeamCard createTeamCard(TeamCard create, UUID userId) {
         var user = userService.getUser(userId);
         create.setUser(user);
         create = teamCardsRepository.save(create);
-        aclService.createAcl(new ObjectIdentityImpl(create));
+        aclService.createAcl(create, user.getUsername());
         return create;
     }
 
     @Override
-    @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public TeamCard updateTeamCard(UUID teamCardId, TeamCard teamCardDto, UUID userId) {
         var teamCard = get(teamCardId, userId);
         updateTeamCard(teamCardDto, teamCard);
-        teamCard.setUser(userService.getUser(userId));
+        var user = userService.getUser(userId);
+        teamCard.setUser(user);
         teamCard = teamCardsRepository.save(teamCard);
+        aclService.updateAcl(teamCard, user.getUsername());
         return teamCard;
     }
 
@@ -114,9 +114,10 @@ public class TeamCardsServiceImpl implements TeamCardsService {
     }
 
     @Override
-    @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteTeamCard(UUID id, UUID userId) {
+        var teamCard = get(id, userId);
+        aclService.deleteAcl(teamCard);
         teamCardsRepository.deleteByIdAndUserId(id, userId);
     }
 
@@ -135,15 +136,5 @@ public class TeamCardsServiceImpl implements TeamCardsService {
         if (source.getStatus() != null) {
             target.setStatus(source.getStatus());
         }
-    }
-
-    private void createAcl(TeamCard createTeamCard) {
-        var objectIdentity = new ObjectIdentityImpl(createTeamCard);
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        var sid = new PrincipalSid(authentication);
-        aclService.createAcl(objectIdentity);
-        aclService.addPermission(objectIdentity, sid, BasePermission.READ);
-        aclService.addPermission(objectIdentity, sid, BasePermission.WRITE);
-        aclService.addPermission(objectIdentity, sid, BasePermission.DELETE);
     }
 }

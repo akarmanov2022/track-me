@@ -87,7 +87,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: user_id
-                  type: VARCHAR(32)
+                  type: uuid
                   constraints:
                     nullable: false
   - changeSet:

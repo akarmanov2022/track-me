@@ -34,6 +34,7 @@ class AuthenticationServiceImpl implements AuthenticationService {
                 .phoneNumber(singUpRequest.getPhoneNumber())
                 .role(UserRole.valueOf(singUpRequest.getRole().toString()))
                 .password(passwordEncoder.encode(singUpRequest.getPassword()))
+                .email(singUpRequest.getEmail())
                 .build();
 
         userService.createUser(user);

@@ -2,8 +2,12 @@ package net.akarmanov.projectplace.services.acl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import net.akarmanov.projectplace.domain.TeamCard;
+import org.springframework.security.acls.domain.BasePermission;
+import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.model.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,11 +16,35 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class AclService {
-    private final MutableAclService aclService;
+    private final MutableAclService      aclService;
 
-    public MutableAcl createAcl(ObjectIdentity objectIdentity) {
-        // Create a new ACL for the given object identity
-        return aclService.createAcl(objectIdentity);
+    public void createAcl(Object identity) {
+        var objectIdentity = new ObjectIdentityImpl(identity);
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var sid = new PrincipalSid(authentication);
+        aclService.createAcl(objectIdentity);
+        addPermissions(objectIdentity, sid, List.of(
+                BasePermission.READ,
+                BasePermission.WRITE,
+                BasePermission.DELETE));
+    }
+
+    public void createAcl(Object identity, String principle) {
+        var objectIdentity = new ObjectIdentityImpl(identity);
+        var sid = new PrincipalSid(principle);
+        aclService.createAcl(objectIdentity);
+        addPermissions(objectIdentity, sid, List.of(
+                BasePermission.READ,
+                BasePermission.WRITE,
+                BasePermission.DELETE));
+    }
+
+    public void updateAcl(Object identity, String principle) {
+        var objectIdentity = new ObjectIdentityImpl(identity);
+        var sid = new PrincipalSid(principle);
+        var acl = (MutableAcl) aclService.readAclById(objectIdentity);
+        acl.setOwner(sid);
+        aclService.updateAcl(acl);
     }
 
     public void addPermission(ObjectIdentity objectIdentity, Sid sid, Permission permission) {
@@ -29,6 +57,7 @@ public class AclService {
     public void addPermissions(ObjectIdentity objectIdentity, Sid sid, List<Permission> permissions) {
         // Add permission to the ACL for the given object identity and SID
         MutableAcl acl = (MutableAcl) aclService.readAclById(objectIdentity);
+        acl.setOwner(sid);
         for (var permission : permissions) {
             acl.insertAce(acl.getEntries().size(), permission, sid, true);
         }
@@ -54,5 +83,11 @@ public class AclService {
         createAcl(objectIdentity);
         Sid sid = new PrincipalSid(username);
         addPermission(objectIdentity, sid, permission);
+    }
+
+    public void deleteAcl(TeamCard teamCard) {
+        var objectIdentity = new ObjectIdentityImpl(teamCard);
+        var acl = (MutableAcl) aclService.readAclById(objectIdentity);
+        aclService.deleteAcl(objectIdentity, true);
     }
 }
