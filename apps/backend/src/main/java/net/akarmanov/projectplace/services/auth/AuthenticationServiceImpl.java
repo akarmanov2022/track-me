@@ -34,6 +34,7 @@ class AuthenticationServiceImpl implements AuthenticationService {
                 .phoneNumber(singUpRequest.getPhoneNumber())
                 .role(UserRole.valueOf(singUpRequest.getRole().toString()))
                 .password(passwordEncoder.encode(singUpRequest.getPassword()))
+                .email(singUpRequest.getEmail())
                 .build();
 
         userService.createUser(user);
@@ -47,8 +48,7 @@ class AuthenticationServiceImpl implements AuthenticationService {
                 request.getTelegramId(),
                 request.getPassword())
         );
-        var user = userService.getDetailsService()
-                .loadUserByUsername(request.getTelegramId());
+        var user = userService.loadUserByUsername(request.getTelegramId());
 
         var token = jwtService.generateToken(user);
         return new JwtAuthenticationResponse(token);

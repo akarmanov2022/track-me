@@ -1,9 +1,12 @@
 package net.akarmanov.projectplace.rest.api.teamcard;
 
 import lombok.RequiredArgsConstructor;
+import net.akarmanov.projectplace.domain.TeamCard;
+import net.akarmanov.projectplace.mapping.TeamCardMapper;
 import net.akarmanov.projectplace.rest.api.teamcard.dto.TeamCardCreateOrUpdateDto;
 import net.akarmanov.projectplace.rest.api.teamcard.dto.TeamCardDto;
 import net.akarmanov.projectplace.services.teamcard.TeamCardsService;
+import net.akarmanov.projectplace.usecases.UserTeamCardsUseCase;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
@@ -15,35 +18,35 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TeamCardsRestControllerImpl implements TeamCardsRestController {
 
-    private final TeamCardsService teamCardsService;
+    private final UserTeamCardsUseCase userTeamCardsUseCase;
 
     @Override
-    public ResponseEntity<TeamCardDto> createTeamCard(TeamCardCreateOrUpdateDto teamCardDto) {
-        var teamCard = teamCardsService.createTeamCard(teamCardDto);
-        return ResponseEntity.ok(teamCard);
+    public ResponseEntity<TeamCardDto> createTeamCard(TeamCardCreateOrUpdateDto dto) {
+        var createTeamCardDto = userTeamCardsUseCase.createTeamCard(dto);
+        return ResponseEntity.ok(createTeamCardDto);
     }
 
     @Override
-    public ResponseEntity<TeamCardDto> updateTeamCard(UUID teamCardId, TeamCardCreateOrUpdateDto teamCardDto) {
-        var teamCard = teamCardsService.updateTeamCard(teamCardId, teamCardDto);
-        return ResponseEntity.ok(teamCard);
+    public ResponseEntity<TeamCardDto> updateTeamCard(UUID teamCardId, TeamCardCreateOrUpdateDto dto) {
+        var updatedTeamCard = userTeamCardsUseCase.updateTeamCard(teamCardId, dto);
+        return ResponseEntity.ok(updatedTeamCard);
     }
 
     @Override
     public ResponseEntity<PagedModel<TeamCardDto>> getTeamCards(String name, String status, Pageable pageable) {
-        var page = teamCardsService.getTeamCards(name, status, pageable);
+        var page = userTeamCardsUseCase.getTeamCards(name, status, pageable);
         return ResponseEntity.ok(new PagedModel<>(page));
     }
 
     @Override
     public ResponseEntity<TeamCardDto> getTeamCard(UUID id) {
-        var teamCard = teamCardsService.getTeamCard(id);
-        return ResponseEntity.ok(teamCard);
+        var teamCardDto = userTeamCardsUseCase.getTeamCard(id);
+        return ResponseEntity.ok(teamCardDto);
     }
 
     @Override
     public ResponseEntity<Void> deleteTeamCard(UUID id) {
-        teamCardsService.deleteTeamCard(id);
+        userTeamCardsUseCase.deleteTeamCard(id);
         return ResponseEntity.noContent().build();
     }
 }

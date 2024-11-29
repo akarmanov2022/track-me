@@ -7,6 +7,7 @@ import net.akarmanov.projectplace.domain.User;
 import net.akarmanov.projectplace.models.UserRole;
 import net.akarmanov.projectplace.repos.TeamCardsRepository;
 import net.akarmanov.projectplace.repos.UserRepository;
+import net.akarmanov.projectplace.services.teamcard.TeamCardsService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,40 +21,23 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WithMockUser(username = "test", roles = "TRACKER")
+@WithMockUser(BaseApplicationTest.USERNAME)
 class MeetingRestControllerTest extends BaseApplicationTest {
 
     @Autowired
-    private TeamCardsRepository teamCardsRepository;
+    private TeamCardsService teamCardsService;
 
     @Autowired
     private ObjectMapper objectMapper;
 
     private TeamCard teamCard;
 
-    @Autowired
-    private UserRepository userRepository;
-
     @BeforeEach
     void setUp() {
-        user = userRepository.save(User.builder()
-                .email("")
-                .password("123")
-                .telegramId("test")
-                .role(UserRole.TRACKER)
-                .enabled(true)
-                .build());
-        teamCard = teamCardsRepository.save(TeamCard.builder()
+        teamCard = teamCardsService.createTeamCard(TeamCard.builder()
                 .name("Test")
                 .description("Test")
-                .user(user)
                 .build());
-    }
-
-    @AfterEach
-    void tearDown() {
-        teamCardsRepository.deleteAll();
-        userRepository.deleteAll();
     }
 
     @Test

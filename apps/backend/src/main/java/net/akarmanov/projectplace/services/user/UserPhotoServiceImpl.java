@@ -45,6 +45,11 @@ class UserPhotoServiceImpl implements UserPhotoService {
     }
 
     @Override
+    public void addPhoto(MultipartFile file) {
+
+    }
+
+    @Override
     @Transactional
     public void deletePhoto(UUID userId) {
         var userPhoto = userPhotoRepository.findByUserId(userId)

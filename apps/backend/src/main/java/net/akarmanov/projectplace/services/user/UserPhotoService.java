@@ -9,6 +9,8 @@ public interface UserPhotoService {
 
     void addPhotoToUser(UUID userId, MultipartFile file);
 
+    void addPhoto(MultipartFile file);
+
     void deletePhoto(UUID userId);
 
     UserPhotoDto getPhotoByUserId(UUID userId);

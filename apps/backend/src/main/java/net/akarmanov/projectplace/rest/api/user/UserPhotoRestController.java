@@ -16,7 +16,6 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 @Tag(name = "User Photo API", description = "Операции с фото пользователя")
 @RequestMapping("/api/v1/users/{userId}/photo")
-@PreAuthorize("hasRole('ROLE_TRACKER')")
 public interface UserPhotoRestController {
 
     @Operation(summary = "Добавить фото пользователя",

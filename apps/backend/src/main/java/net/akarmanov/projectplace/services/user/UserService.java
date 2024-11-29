@@ -7,7 +7,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.UUID;
 
-public interface UserService {
+public interface UserService extends UserDetailsService {
     User getUser(UUID id);
 
     User getUserByTelegramId(String telegramId);
@@ -19,8 +19,6 @@ public interface UserService {
     void deleteUser(String id);
 
     User getCurrentUser();
-
-    UserDetailsService getDetailsService();
 
     boolean existsByUsername(String username);
 

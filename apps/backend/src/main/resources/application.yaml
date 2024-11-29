@@ -5,10 +5,10 @@ spring:
     driver-class-name: org.postgresql.Driver
     password: ${DB_PASSWORD:project-place}
     username: ${DB_USERNAME:project-place}
-    url: jdbc:postgresql://localhost:5432/project-place
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:project-place}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
@@ -29,6 +29,9 @@ springdoc:
   enable-spring-security: true
 
 app:
+  acl:
+    sid-identity-query: "select currval(pg_get_serial_sequence('acl_sid', 'id'))"
+    class-identity-query: "select currval(pg_get_serial_sequence('acl_class', 'id'))"
   superadmin:
     email: ${ADMIN_EMAIL:superadmin@superadmin.superadmin}
     username: ${ADMIN_USERNAME:superadmin}

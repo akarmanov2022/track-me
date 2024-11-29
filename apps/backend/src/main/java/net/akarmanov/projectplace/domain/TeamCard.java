@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import net.akarmanov.projectplace.models.TeamCardStatus;
 import org.hibernate.annotations.UuidGenerator;
+import org.springframework.security.acls.model.ObjectIdentity;
 
+import java.io.Serializable;
 import java.util.Set;
 import java.util.UUID;
 
@@ -42,5 +44,4 @@ public class TeamCard {
 
     @ManyToMany(mappedBy = "streamsTeamCardTeamCards")
     private Set<Stream> streamsTeamCardStreams;
-
 }
