@@ -19,24 +19,25 @@ public class AclService {
     private final MutableAclService aclService;
 
     public MutableAcl createAcl(Object identity) {
-        var objectIdentity = new ObjectIdentityImpl(identity);
         var authentication = SecurityContextHolder.getContext().getAuthentication();
-        var sid = new PrincipalSid(authentication);
-        aclService.createAcl(objectIdentity);
-        return addPermissions(objectIdentity, sid, List.of(
+        return createAcl(identity, authentication.getName(), List.of(
                 BasePermission.READ,
                 BasePermission.WRITE,
                 BasePermission.DELETE));
     }
 
-    public void createAcl(Object identity, String principle) {
-        var objectIdentity = new ObjectIdentityImpl(identity);
-        var sid = new PrincipalSid(principle);
-        aclService.createAcl(objectIdentity);
-        addPermissions(objectIdentity, sid, List.of(
+    public MutableAcl createAcl(Object identity, String principle) {
+        return createAcl(identity, principle, List.of(
                 BasePermission.READ,
                 BasePermission.WRITE,
                 BasePermission.DELETE));
+    }
+
+    public MutableAcl createAcl(Object identity, String principle, List<? extends Permission> permissions) {
+        var objectIdentity = new ObjectIdentityImpl(identity);
+        var sid = new PrincipalSid(principle);
+        aclService.createAcl(objectIdentity);
+        return addPermissions(objectIdentity, sid, permissions);
     }
 
     public void updateAcl(Object identity, String principle) {
@@ -47,14 +48,7 @@ public class AclService {
         aclService.updateAcl(acl);
     }
 
-    public void addPermission(ObjectIdentity objectIdentity, Sid sid, Permission permission) {
-        // Add permission to the ACL for the given object identity and SID
-        MutableAcl acl = (MutableAcl) aclService.readAclById(objectIdentity);
-        acl.insertAce(acl.getEntries().size(), permission, sid, true);
-        aclService.updateAcl(acl);
-    }
-
-    public MutableAcl addPermissions(ObjectIdentity objectIdentity, Sid sid, List<Permission> permissions) {
+    public MutableAcl addPermissions(ObjectIdentity objectIdentity, Sid sid, List<? extends Permission> permissions) {
         // Add permission to the ACL for the given object identity and SID
         MutableAcl acl = (MutableAcl) aclService.readAclById(objectIdentity);
         acl.setOwner(sid);
@@ -84,13 +78,6 @@ public class AclService {
             }
         }
         aclService.updateAcl(acl);
-    }
-
-    public void createAclWithPermission(ObjectIdentity objectIdentity, String username, Permission permission) {
-        // Create an ACL and add permission for a specific user
-        createAcl(objectIdentity);
-        Sid sid = new PrincipalSid(username);
-        addPermission(objectIdentity, sid, permission);
     }
 
     public void deleteAcl(TeamCard teamCard) {
