@@ -3,7 +3,6 @@ package net.akarmanov.projectplace.services.teamcard;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import net.akarmanov.projectplace.domain.TeamCard;
-import net.akarmanov.projectplace.domain.User;
 import net.akarmanov.projectplace.models.TeamCardStatus;
 import net.akarmanov.projectplace.repos.TeamCardsRepository;
 import net.akarmanov.projectplace.services.acl.AclService;
@@ -12,13 +11,8 @@ import net.akarmanov.projectplace.services.user.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.acls.domain.BasePermission;
-import org.springframework.security.acls.domain.ObjectIdentityImpl;
-import org.springframework.security.acls.domain.PrincipalSid;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 import static net.akarmanov.projectplace.domain.spec.TeamCardSpecification.*;
@@ -27,7 +21,7 @@ import static org.springframework.data.jpa.domain.Specification.where;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class TeamCardsServiceImpl implements TeamCardsService {
+public class DomainTeamCardsService implements TeamCardsService {
 
     private final TeamCardsRepository teamCardsRepository;
 
@@ -67,7 +61,6 @@ public class TeamCardsServiceImpl implements TeamCardsService {
     }
 
     @Override
-    @PreAuthorize("hasPermission(#id, 'net.akarmanov.projectplace.domain.TeamCard', 'READ') or hasRole('ADMIN')")
     public TeamCard getTeamCard(UUID id) {
         return teamCardsRepository.findById(id)
                 .orElseThrow(() -> new TeamCardNotFoundException(id));

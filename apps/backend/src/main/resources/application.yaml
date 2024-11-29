@@ -1,9 +1,4 @@
 spring:
-  mail:
-    host: ${MAIL_HOST:smtp.tusur.ru}
-    username: ${MAIL_USERNAME:smtp.tusur.ru}
-    password: ${MAIL_PASSWORD}
-    port: ${MAIL_PORT:587}
   application:
     name: project-place-backend
   datasource:
@@ -13,7 +8,7 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:project-place}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
@@ -36,7 +31,7 @@ springdoc:
 app:
   acl:
     sid-identity-query: "select currval(pg_get_serial_sequence('acl_sid', 'id'))"
-    class-identity-query: "select currval(pg_get_serial_sequence('acl_sid', 'id'))"
+    class-identity-query: "select currval(pg_get_serial_sequence('acl_class', 'id'))"
   superadmin:
     email: ${ADMIN_EMAIL:superadmin@superadmin.superadmin}
     username: ${ADMIN_USERNAME:superadmin}

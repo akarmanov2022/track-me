@@ -17,8 +17,21 @@ public interface MeetingMapper {
     @Mapping(target = "id", ignore = true)
     Meeting mapToEntity(MeetingCreateDto meetingCreateDto);
 
+    @Mapping(target = "tasks", ignore = true)
     @Mapping(target = "teamCardId", source = "teamCard.id")
     MeetingDto mapToDto(Meeting meeting);
 
+    @Mapping(target = "teamCard", ignore = true)
+    @Mapping(target = "startDate", ignore = true)
+    @Mapping(target = "screenshot", ignore = true)
+    @Mapping(target = "meetingTasks", ignore = true)
+    @Mapping(target = "id", ignore = true)
     void updateEntity(@MappingTarget Meeting meeting, MeetingUpdateDto meetingCreateDto);
+
+    @Mapping(target = "teamCard", ignore = true)
+    @Mapping(target = "startDate", ignore = true)
+    @Mapping(target = "screenshot", ignore = true)
+    @Mapping(target = "meetingTasks", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    Meeting mapToEntity(MeetingUpdateDto meetingCreateDto);
 }

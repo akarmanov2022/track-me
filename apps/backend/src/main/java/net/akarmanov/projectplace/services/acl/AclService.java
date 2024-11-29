@@ -16,14 +16,14 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class AclService {
-    private final MutableAclService      aclService;
+    private final MutableAclService aclService;
 
-    public void createAcl(Object identity) {
+    public MutableAcl createAcl(Object identity) {
         var objectIdentity = new ObjectIdentityImpl(identity);
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         var sid = new PrincipalSid(authentication);
         aclService.createAcl(objectIdentity);
-        addPermissions(objectIdentity, sid, List.of(
+        return addPermissions(objectIdentity, sid, List.of(
                 BasePermission.READ,
                 BasePermission.WRITE,
                 BasePermission.DELETE));
@@ -54,13 +54,21 @@ public class AclService {
         aclService.updateAcl(acl);
     }
 
-    public void addPermissions(ObjectIdentity objectIdentity, Sid sid, List<Permission> permissions) {
+    public MutableAcl addPermissions(ObjectIdentity objectIdentity, Sid sid, List<Permission> permissions) {
         // Add permission to the ACL for the given object identity and SID
         MutableAcl acl = (MutableAcl) aclService.readAclById(objectIdentity);
         acl.setOwner(sid);
         for (var permission : permissions) {
             acl.insertAce(acl.getEntries().size(), permission, sid, true);
         }
+        return aclService.updateAcl(acl);
+    }
+
+    public void createAclWithParent(Object identity, Object parent) {
+        var parentObjectIdentity = new ObjectIdentityImpl(parent);
+        var acl = createAcl(identity);
+        var parentAcl = (MutableAcl) aclService.readAclById(parentObjectIdentity);
+        acl.setParent(parentAcl);
         aclService.updateAcl(acl);
     }
 
@@ -87,7 +95,6 @@ public class AclService {
 
     public void deleteAcl(TeamCard teamCard) {
         var objectIdentity = new ObjectIdentityImpl(teamCard);
-        var acl = (MutableAcl) aclService.readAclById(objectIdentity);
         aclService.deleteAcl(objectIdentity, true);
     }
 }

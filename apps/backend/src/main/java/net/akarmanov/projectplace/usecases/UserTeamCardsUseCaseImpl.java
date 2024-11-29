@@ -8,6 +8,7 @@ import net.akarmanov.projectplace.services.teamcard.TeamCardsService;
 import net.akarmanov.projectplace.services.user.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
@@ -45,8 +46,9 @@ public class UserTeamCardsUseCaseImpl implements UserTeamCardsUseCase {
     }
 
     @Override
-    public TeamCardDto getTeamCard(UUID id) {
-        var teamCard = teamCardsService.getTeamCard(id);
+    @PreAuthorize("hasPermission(#teamCardId, 'net.akarmanov.projectplace.domain.TeamCard', 'READ')")
+    public TeamCardDto getTeamCard(UUID teamCardId) {
+        var teamCard = teamCardsService.getTeamCard(teamCardId);
         return teamCardMapper.mapToDto(teamCard);
     }
 

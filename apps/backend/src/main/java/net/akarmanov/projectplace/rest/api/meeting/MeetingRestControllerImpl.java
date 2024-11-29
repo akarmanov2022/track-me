@@ -2,6 +2,7 @@ package net.akarmanov.projectplace.rest.api.meeting;
 
 import lombok.RequiredArgsConstructor;
 import net.akarmanov.projectplace.services.meeting.MeetingService;
+import net.akarmanov.projectplace.usecases.TeamCardMeetingUseCase;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
@@ -13,31 +14,31 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MeetingRestControllerImpl implements MeetingRestController {
 
-    private final MeetingService meetingService;
+    private final TeamCardMeetingUseCase teamCardMeetingUseCase;
 
     @Override
     public ResponseEntity<MeetingDto> createMeeting(UUID teamCardId,
                                                     MeetingCreateDto meetingCreateDto) {
-        var meeting = meetingService.createMeeting(teamCardId, meetingCreateDto);
+        var meeting = teamCardMeetingUseCase.createMeeting(teamCardId, meetingCreateDto);
         return ResponseEntity.ok(meeting);
     }
 
     @Override
     public ResponseEntity<PagedModel<MeetingDto>> getMeetings(Pageable pageable) {
-        var meetings = meetingService.getMeetingsForCurrentUser(pageable);
+        var meetings = teamCardMeetingUseCase.getMeetings(pageable);
         return ResponseEntity.ok(new PagedModel<>(meetings));
     }
 
     @Override
     public ResponseEntity<MeetingDto> updateMeeting(UUID meetingId, UUID teamCardId,
                                                     MeetingUpdateDto meetingCreateDto) {
-        var meeting = meetingService.updateMeeting(meetingId, teamCardId, meetingCreateDto);
+        var meeting = teamCardMeetingUseCase.updateMeeting(meetingId, teamCardId, meetingCreateDto);
         return ResponseEntity.ok(meeting);
     }
 
     @Override
     public ResponseEntity<Void> deleteMeeting(UUID meetingId) {
-        meetingService.deleteMeeting(meetingId);
+        teamCardMeetingUseCase.deleteMeeting(meetingId);
         return ResponseEntity.ok().build();
     }
 

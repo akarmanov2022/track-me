@@ -6,11 +6,11 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.UUID;
 
 public class MeetingSpecification {
-    public static Specification<Meeting> userEquals(UUID userId) {
+    public static Specification<Meeting> userEquals(String userId) {
         return (root, query, criteriaBuilder) -> {
             var teamCardJoin = root.join("teamCard");
             var userJoin = teamCardJoin.join("user");
-            return criteriaBuilder.equal(userJoin.get("id"), userId);
+            return criteriaBuilder.equal(userJoin.get("telegramId"), userId);
         };
     }
 

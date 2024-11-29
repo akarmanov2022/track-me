@@ -2,22 +2,20 @@ package net.akarmanov.projectplace.services.meeting;
 
 import lombok.RequiredArgsConstructor;
 import net.akarmanov.projectplace.domain.Meeting;
-import net.akarmanov.projectplace.domain.spec.MeetingSpecification;
+import net.akarmanov.projectplace.domain.TeamCard;
 import net.akarmanov.projectplace.models.MeetingStatus;
 import net.akarmanov.projectplace.repos.MeetingRepository;
-import net.akarmanov.projectplace.rest.api.meeting.MeetingCreateDto;
-import net.akarmanov.projectplace.rest.api.meeting.MeetingDto;
-import net.akarmanov.projectplace.rest.api.meeting.MeetingUpdateDto;
+import net.akarmanov.projectplace.services.acl.AclService;
 import net.akarmanov.projectplace.services.exceptions.MeetingNotFoundException;
-import net.akarmanov.projectplace.services.meeting.mapping.MeetingMapper;
 import net.akarmanov.projectplace.services.teamcard.TeamCardsService;
-import net.akarmanov.projectplace.services.user.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.UUID;
 
 import static net.akarmanov.projectplace.domain.spec.MeetingSpecification.*;
@@ -31,55 +29,61 @@ public class MeetingServiceImpl implements MeetingService {
 
     private final TeamCardsService teamCardsService;
 
-    private final UserService userService;
-
-    private final MeetingMapper meetingMapper;
+    private final AclService aclService;
 
     @Override
     @Transactional
-    public MeetingDto createMeeting(UUID teamCardId, MeetingCreateDto meetingCreateDto) {
-        var teamCard = teamCardsService.getTeamCard(teamCardId);
-        var meeting = meetingMapper.mapToEntity(meetingCreateDto);
-
-        meeting.setTeamCard(teamCard);
-        meeting.setStatus(MeetingStatus.OK);
-
-        meeting = meetingRepository.save(meeting);
-        return meetingMapper.mapToDto(meeting);
+    @PreAuthorize("hasPermission(#teamCard, 'READ')")
+    public Meeting createMeeting(TeamCard teamCard, Meeting createMeeting) {
+        createMeeting.setTeamCard(teamCard);
+        createMeeting.setStatus(MeetingStatus.OK);
+        var save = meetingRepository.save(createMeeting);
+        aclService.createAclWithParent(save, teamCard);
+        return save;
     }
 
     @Override
-    public Page<MeetingDto> getMeetingsForCurrentUser(Pageable pageable) {
-        var user = userService.getCurrentUser();
-        return meetingRepository.findAll(where(MeetingSpecification.userEquals(user.getId())), pageable)
-                .map(meetingMapper::mapToDto);
+    public Page<Meeting> getMeetingsForCurrentUser(Pageable pageable) {
+        var username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return meetingRepository.findAll(where(userEquals(username)), pageable);
     }
 
     @Override
     @Transactional
-    public MeetingDto updateMeeting(UUID meetingId, UUID teamCardId, MeetingUpdateDto meetingUpdateDto) {
-        var user = userService.getCurrentUser();
-        var meeting = meetingRepository.findOne(Specification.where(userEquals(user.getId()))
-                        .and(MeetingSpecification.teamCardIdEquals(teamCardId)).and(MeetingSpecification.meetingIdEquals(meetingId)))
-                .orElseThrow(() -> new MeetingNotFoundException(meetingId, teamCardId));
-        meetingMapper.updateEntity(meeting, meetingUpdateDto);
-        meeting = meetingRepository.save(meeting);
-        return meetingMapper.mapToDto(meeting);
-    }
-
-    @Override
-    @Transactional
-    public void deleteMeeting(UUID meetingId) {
-        var user = userService.getCurrentUser();
-        var meeting = meetingRepository.findOne(Specification.where(userEquals(user.getId()))
+    @PreAuthorize("hasPermission(#teamCardId, 'net.akarmanov.projectplace.domain.TeamCard', 'READ')")
+    public Meeting updateMeeting(UUID meetingId, UUID teamCardId, Meeting updateMeeting) {
+        var meeting = meetingRepository.findOne(where(teamCardIdEquals(teamCardId))
                         .and(meetingIdEquals(meetingId)))
+                .orElseThrow(() -> new MeetingNotFoundException(meetingId, teamCardId));
+        updateEntity(meeting, updateMeeting);
+        return meetingRepository.save(meeting);
+    }
+
+    private void updateEntity(Meeting meeting, Meeting createMeeting) {
+        if (!Objects.equals(createMeeting.getLink(), meeting.getLink())) {
+            meeting.setLink(createMeeting.getLink());
+        }
+        if (createMeeting.getStatus() != meeting.getStatus()) {
+            meeting.setStatus(createMeeting.getStatus());
+        }
+        if (!Objects.equals(createMeeting.getNumber(), meeting.getNumber())) {
+            meeting.setNumber(createMeeting.getNumber());
+        }
+    }
+
+    @Override
+    @Transactional
+    @PreAuthorize("hasPermission(#meetingId, 'net.akarmanov.projectplace.domain.Meeting', 'DELETE')")
+    public void deleteMeeting(UUID meetingId) {
+        var meeting = meetingRepository.findOne(where(meetingIdEquals(meetingId)))
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId));
         meetingRepository.delete(meeting);
     }
 
     @Override
-    public Meeting getById(UUID targetId) {
-        return meetingRepository.findById(targetId)
-                .orElseThrow(() -> new MeetingNotFoundException(targetId));
+    @PreAuthorize("hasPermission(#meetingId, 'net.akarmanov.projectplace.domain.Meeting', 'READ')")
+    public Meeting getById(UUID meetingId) {
+        return meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new MeetingNotFoundException(meetingId));
     }
 }
