@@ -70,8 +70,8 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<TeamCard> userTeamCards;
 
-    @ManyToMany(mappedBy = "streamsUserUsers")
-    private Set<Stream> streamsUserStreams;
+    @ManyToMany(mappedBy = "users")
+    private Set<Stream> streams;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserPhoto photo;

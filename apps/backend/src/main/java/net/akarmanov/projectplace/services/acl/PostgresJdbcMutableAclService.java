@@ -1,6 +1,6 @@
 package net.akarmanov.projectplace.services.acl;
 
-import net.akarmanov.projectplace.configuration.acl.AclAppProperties;
+import net.akarmanov.projectplace.configuration.AclAppProperties;
 import org.springframework.security.acls.jdbc.JdbcMutableAclService;
 import org.springframework.security.acls.jdbc.LookupStrategy;
 import org.springframework.security.acls.model.AclCache;
