@@ -1,4 +1,4 @@
-package net.akarmanov.projectplace.services.meeting.mapping;
+package net.akarmanov.projectplace.mapping;
 
 import net.akarmanov.projectplace.domain.Meeting;
 import net.akarmanov.projectplace.rest.api.meeting.MeetingCreateDto;
@@ -8,7 +8,11 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-@Mapper(componentModel = "spring")
+@Mapper(
+        componentModel = "spring",
+        uses = {
+                TaskMapper.class,
+        })
 public interface MeetingMapper {
     @Mapping(target = "teamCard", ignore = true)
     @Mapping(target = "status", ignore = true)
@@ -17,7 +21,7 @@ public interface MeetingMapper {
     @Mapping(target = "id", ignore = true)
     Meeting mapToEntity(MeetingCreateDto meetingCreateDto);
 
-    @Mapping(target = "tasks", ignore = true)
+    @Mapping(target = "tasks", source = "meetingTasks")
     @Mapping(target = "teamCardId", source = "teamCard.id")
     MeetingDto mapToDto(Meeting meeting);
 

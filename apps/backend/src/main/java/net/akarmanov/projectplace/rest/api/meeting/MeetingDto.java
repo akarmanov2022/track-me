@@ -6,6 +6,7 @@ import net.akarmanov.projectplace.rest.api.dto.TaskDto;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Schema(description = "DTO встречи команды")
@@ -23,6 +24,6 @@ public record MeetingDto(
         @Schema(description = "Идентификатор карточки команды")
         String teamCardId,
         @Schema(description = "Список задач на встречу")
-        List<TaskDto> tasks
+        Set<TaskDto> tasks
 ) {
 }
