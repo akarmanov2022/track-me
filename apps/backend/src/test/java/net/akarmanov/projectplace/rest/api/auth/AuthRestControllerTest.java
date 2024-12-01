@@ -1,6 +1,7 @@
 package net.akarmanov.projectplace.rest.api.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.akarmanov.projectplace.BaseApplicationTest;
 import net.akarmanov.projectplace.domain.User;
 import net.akarmanov.projectplace.models.UserRole;
 import net.akarmanov.projectplace.repos.UserRepository;
@@ -32,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         properties = {
                 "JWT_SECRET=12345678905675675674564564566756756756745645656"
         })
-class AuthRestControllerTest {
+class AuthRestControllerTest extends BaseApplicationTest {
 
     public static final String USERNAME = "username";
 

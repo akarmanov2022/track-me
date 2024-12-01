@@ -15,13 +15,11 @@ public interface UserMapper {
 
     UserDTO mapUserToDto(User user);
 
-    @Mapping(target = "streams", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "userTeamCards", ignore = true)
     User mapDtoToUser(UserDTO userDTO);
 
     @Mapping(target = "userTeamCards", ignore = true)
-    @Mapping(target = "streams", ignore = true)
     @Mapping(target = "role", ignore = true)
     @Mapping(target = "photo", ignore = true)
     @Mapping(target = "password", ignore = true)

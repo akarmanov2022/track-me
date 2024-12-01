@@ -1,29 +1,22 @@
 package net.akarmanov.projectplace;
 
+import net.akarmanov.projectplace.domain.Stream;
 import net.akarmanov.projectplace.domain.User;
 import net.akarmanov.projectplace.models.UserRole;
+import net.akarmanov.projectplace.repos.StreamRepository;
 import net.akarmanov.projectplace.repos.UserRepository;
-import net.akarmanov.projectplace.services.user.UserService;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.acls.model.AclService;
-import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.test.context.support.TestExecutionEvent;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.jdbc.SqlConfig;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDate;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -50,10 +43,18 @@ public abstract class BaseApplicationTest {
     protected UserRepository userRepository;
 
     @Autowired
+    protected StreamRepository streamRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void initUser() {
+        streamRepository.save(Stream.builder()
+                .name("stream 1")
+                .startDate(LocalDate.now())
+                .endDate(LocalDate.now().plusDays(1))
+                .build());
         user = userRepository.save(User.builder()
                 .enabled(true)
                 .firstName("Иван")
@@ -69,5 +70,6 @@ public abstract class BaseApplicationTest {
     @AfterEach
     void deleteUser() {
         userRepository.deleteAll();
+        streamRepository.deleteAll();
     }
 }

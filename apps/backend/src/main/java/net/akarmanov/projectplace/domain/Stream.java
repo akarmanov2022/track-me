@@ -33,20 +33,10 @@ public class Stream {
     @Column
     private LocalDate endDate;
 
-    @ManyToMany
-    @JoinTable(
-            name = "streams_team_cards",
-            joinColumns = @JoinColumn(name = "stream_id"),
-            inverseJoinColumns = @JoinColumn(name = "team_id")
-    )
+    @ManyToMany(mappedBy = "streams")
     private Set<TeamCard> teamCards = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "streams_users",
-            joinColumns = @JoinColumn(name = "stream_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
+    @ManyToMany(mappedBy = "streams")
     private Set<User> users = new HashSet<>();
 
     public void addTeamCard(TeamCard teamCard) {

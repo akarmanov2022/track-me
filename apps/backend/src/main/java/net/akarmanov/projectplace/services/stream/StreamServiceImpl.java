@@ -40,7 +40,6 @@ public class StreamServiceImpl implements StreamService {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN')")
     public Stream save(Stream stream) {
         return streamRepository.save(stream);
     }

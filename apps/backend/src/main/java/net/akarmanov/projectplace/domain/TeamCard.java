@@ -40,6 +40,11 @@ public class TeamCard {
     @OneToMany(mappedBy = "teamCard", cascade = CascadeType.ALL)
     private Set<Meeting> teamMeetings;
 
-    @ManyToMany(mappedBy = "teamCards")
-    private Set<Stream> streamsTeamCardStreams;
+    @ManyToMany
+    @JoinTable(
+            name = "streams_team_cards",
+            joinColumns = @JoinColumn(name = "team_id"),
+            inverseJoinColumns = @JoinColumn(name = "stream_id")
+    )
+    private Set<Stream> streams;
 }

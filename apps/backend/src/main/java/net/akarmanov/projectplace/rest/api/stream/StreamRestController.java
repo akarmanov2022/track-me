@@ -1,6 +1,7 @@
 package net.akarmanov.projectplace.rest.api.stream;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import net.akarmanov.projectplace.rest.api.dto.StreamDto;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+@Tag(name = "Stream API", description = "API для работы с потоками")
 @RequestMapping("/api/v1/streams")
 public interface StreamRestController {
     @Operation(summary = "Получить текущий поток", description = "Возвращает информацию о текущем потоке")
