@@ -13,7 +13,11 @@ public interface StreamService {
 
     Stream getCurrentStream();
 
-    void save(Stream stream);
+    Stream save(Stream stream);
 
     Page<Stream> find(Pageable pageable);
+
+    void delete(UUID streamId);
+
+    Page<Stream> findAll(Pageable pageable);
 }

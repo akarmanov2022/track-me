@@ -41,12 +41,23 @@ public class StreamServiceImpl implements StreamService {
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
-    public void save(Stream stream) {
-        streamRepository.save(stream);
+    public Stream save(Stream stream) {
+        return streamRepository.save(stream);
     }
 
     @Override
     public Page<Stream> find(Pageable pageable) {
+        return streamRepository.findAll(pageable);
+    }
+
+    @Override
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public void delete(UUID streamId) {
+        streamRepository.deleteById(streamId);
+    }
+
+    @Override
+    public Page<Stream> findAll(Pageable pageable) {
         return streamRepository.findAll(pageable);
     }
 }
