@@ -5,7 +5,7 @@ import net.akarmanov.projectplace.rest.api.meeting.MeetingCreateDto;
 import net.akarmanov.projectplace.rest.api.meeting.MeetingDto;
 import net.akarmanov.projectplace.rest.api.meeting.MeetingUpdateDto;
 import net.akarmanov.projectplace.services.meeting.MeetingService;
-import net.akarmanov.projectplace.services.meeting.mapping.MeetingMapper;
+import net.akarmanov.projectplace.mapping.MeetingMapper;
 import net.akarmanov.projectplace.services.teamcard.TeamCardsService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

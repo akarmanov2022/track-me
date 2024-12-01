@@ -2,6 +2,7 @@ package net.akarmanov.projectplace.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import net.akarmanov.projectplace.models.TaskStatus;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.util.UUID;
@@ -30,8 +31,9 @@ public class Task {
     @Column(columnDefinition = "text")
     private String description;
 
-    @Column(nullable = false, length = 32)
-    private String status;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private TaskStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meeting_id", nullable = false)

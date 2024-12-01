@@ -45,7 +45,7 @@ public class Meeting {
     @JoinColumn(name = "team_id", nullable = false)
     private TeamCard teamCard;
 
-    @OneToMany(mappedBy = "meeting")
+    @OneToMany(mappedBy = "meeting", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<Task> meetingTasks;
 
 }
