@@ -1,4 +1,4 @@
-package net.akarmanov.projectplace.configuration.acl;
+package net.akarmanov.projectplace.configuration;
 
 import lombok.RequiredArgsConstructor;
 import net.akarmanov.projectplace.services.acl.PostgresJdbcMutableAclService;
@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.acls.AclPermissionEvaluator;
 import org.springframework.security.acls.domain.*;
 import org.springframework.security.acls.jdbc.BasicLookupStrategy;
@@ -23,15 +24,16 @@ import javax.sql.DataSource;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 @EnableConfigurationProperties(AclAppProperties.class)
-public class AclMethodSecurityConfiguration {
+public class MethodSecurityConfiguration {
 
     private final DataSource dataSource;
     private final AclAppProperties properties;
 
     @Bean
-    public MethodSecurityExpressionHandler createExpressionHandler() {
+    public MethodSecurityExpressionHandler createExpressionHandler(RoleHierarchy roleHierarchy) {
         var expressionHandler = new DefaultMethodSecurityExpressionHandler();
         expressionHandler.setPermissionEvaluator(new AclPermissionEvaluator(mutableAclService()));
+        expressionHandler.setRoleHierarchy(roleHierarchy);
         return expressionHandler;
     }
 

@@ -25,7 +25,7 @@ error:
     log-levels:
       5xx: ERROR
 springdoc:
-  paths-to-match: /api/**
+  paths-to-match: /api/v1/**
   enable-spring-security: true
 
 app:

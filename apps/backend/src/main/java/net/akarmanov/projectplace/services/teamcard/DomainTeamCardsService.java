@@ -40,7 +40,7 @@ public class DomainTeamCardsService implements TeamCardsService {
     }
 
     @Override
-    @PreAuthorize("hasPermission(#teamCardId, 'net.akarmanov.projectplace.domain.TeamCard', 'WRITE') or hasRole('ADMIN')")
+    @PreAuthorize("hasPermission(#teamCardId, 'net.akarmanov.projectplace.domain.TeamCard', 'WRITE')")
     public TeamCard updateTeamCard(UUID teamCardId, TeamCard teamCardDto) {
         var teamCard = get(teamCardId);
         updateTeamCard(teamCardDto, teamCard);
@@ -67,7 +67,7 @@ public class DomainTeamCardsService implements TeamCardsService {
     }
 
     @Override
-    @PreAuthorize("hasPermission(#id, 'net.akarmanov.projectplace.domain.TeamCard', 'DELETE') or hasRole('ADMIN')")
+    @PreAuthorize("hasPermission(#id, 'net.akarmanov.projectplace.domain.TeamCard', 'DELETE')")
     public void deleteTeamCard(UUID id) {
         teamCardsRepository.deleteById(id);
     }

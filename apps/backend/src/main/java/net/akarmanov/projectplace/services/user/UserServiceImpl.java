@@ -8,6 +8,7 @@ import net.akarmanov.projectplace.services.exceptions.NoMatchesPasswordException
 import net.akarmanov.projectplace.services.exceptions.PhoneNumberExistsException;
 import net.akarmanov.projectplace.services.exceptions.TelegramIdExistsException;
 import net.akarmanov.projectplace.services.exceptions.UserNotFoundException;
+import net.akarmanov.projectplace.services.stream.StreamService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -46,7 +47,6 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByPhoneNumber(userCreate.getPhoneNumber())) {
             throw new PhoneNumberExistsException(userCreate.getPhoneNumber());
         }
-
         return userRepository.save(userCreate);
     }
 
@@ -66,7 +66,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(String id) {
-        userRepository.deleteById(UUID.fromString(id));
+        var user = getUser(UUID.fromString(id));
+        userRepository.delete(user);
     }
 
     @Override

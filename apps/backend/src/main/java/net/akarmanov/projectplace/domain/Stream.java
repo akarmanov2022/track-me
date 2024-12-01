@@ -1,11 +1,11 @@
 package net.akarmanov.projectplace.domain;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,6 +13,9 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "streams")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Stream {
 
     @Id
@@ -30,23 +33,17 @@ public class Stream {
     @Column
     private LocalDate endDate;
 
-    @Column
-    private Integer teamsCount;
+    @ManyToMany(mappedBy = "streams")
+    private Set<TeamCard> teamCards = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "streams_team_cards",
-            joinColumns = @JoinColumn(name = "stream_id"),
-            inverseJoinColumns = @JoinColumn(name = "team_id")
-    )
-    private Set<TeamCard> streamsTeamCardTeamCards;
+    @ManyToMany(mappedBy = "streams")
+    private Set<User> users = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "streams_users",
-            joinColumns = @JoinColumn(name = "stream_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private Set<User> streamsUserUsers;
+    public void addTeamCard(TeamCard teamCard) {
+        teamCards.add(teamCard);
+    }
 
+    public void addUser(User user) {
+        users.add(user);
+    }
 }

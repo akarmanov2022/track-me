@@ -4,9 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import net.akarmanov.projectplace.models.TeamCardStatus;
 import org.hibernate.annotations.UuidGenerator;
-import org.springframework.security.acls.model.ObjectIdentity;
 
-import java.io.Serializable;
 import java.util.Set;
 import java.util.UUID;
 
@@ -42,6 +40,11 @@ public class TeamCard {
     @OneToMany(mappedBy = "teamCard", cascade = CascadeType.ALL)
     private Set<Meeting> teamMeetings;
 
-    @ManyToMany(mappedBy = "streamsTeamCardTeamCards")
-    private Set<Stream> streamsTeamCardStreams;
+    @ManyToMany
+    @JoinTable(
+            name = "streams_team_cards",
+            joinColumns = @JoinColumn(name = "team_id"),
+            inverseJoinColumns = @JoinColumn(name = "stream_id")
+    )
+    private Set<Stream> streams;
 }

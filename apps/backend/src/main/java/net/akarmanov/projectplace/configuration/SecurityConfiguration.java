@@ -88,10 +88,9 @@ public class SecurityConfiguration {
 
     @Bean
     public RoleHierarchy roleHierarchy() {
-        var roleHierarchy = RoleHierarchyUtils.roleHierarchyFromMap(Map.of(
-                ADMIN.toRoleName(), List.of(TRACKER.toRoleName()),
-                SUPER_ADMIN.toRoleName(), List.of(ADMIN.toRoleName())));
-        return RoleHierarchyImpl.fromHierarchy(roleHierarchy);
+        String hierarchy = "ROLE_SUPER_ADMIN > ROLE_ADMIN\n" +
+                           "ROLE_ADMIN > ROLE_TRACKER";
+        return RoleHierarchyImpl.fromHierarchy(hierarchy);
     }
 
     @Bean
