@@ -12,7 +12,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "streams")
+@Table(name = "stream")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -32,6 +32,18 @@ public class Stream {
 
     @Column
     private LocalDate endDate;
+
+    @ManyToMany
+    @JoinTable(
+            name = "stream_nti_market",
+            joinColumns = @JoinColumn(name = "stream_id"),
+            inverseJoinColumns = @JoinColumn(name = "nti_market_id")
+    )
+    private Set<NTIMarket> ntiMarkets;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private ReadinessLevel readinessLevel;
 
     @ManyToMany(mappedBy = "streams")
     private Set<TeamCard> teamCards = new HashSet<>();

@@ -14,7 +14,7 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "team_cards")
+@Table(name = "team_card")
 public class TeamCard {
 
     @Id
@@ -29,6 +29,8 @@ public class TeamCard {
     @Column(columnDefinition = "text")
     private String description;
 
+    private Boolean enabled;
+
     @Column(length = 32)
     @Enumerated(EnumType.STRING)
     private TeamCardStatus status;
@@ -42,7 +44,7 @@ public class TeamCard {
 
     @ManyToMany
     @JoinTable(
-            name = "streams_team_cards",
+            name = "stream_team_card",
             joinColumns = @JoinColumn(name = "team_id"),
             inverseJoinColumns = @JoinColumn(name = "stream_id")
     )

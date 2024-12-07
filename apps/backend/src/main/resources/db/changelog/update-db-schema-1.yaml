@@ -1,0 +1,72 @@
+databaseChangeLog:
+  - changeSet:
+      id: update-db-schema-1
+      author: Arseniy Karmanov
+      preConditions:
+        - onFail: MARK_RAN
+          or:
+            - tableExists:
+                tableName: stream
+            - not:
+                - columnExists:
+                    tableName: stream
+                    columnName: teams_count
+      changes:
+        - dropColumn:
+            tableName: stream
+            columnName: teams_count
+  - changeSet:
+      id: update-db-schema-2
+      author: Arseniy Karmanov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: stream
+                columnName: readiness_level
+      changes:
+        - addColumn:
+            tableName: stream
+            columns:
+              - column:
+                  name: readiness_level
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: update-db-schema-3
+      author: Arseniy Karmanov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: stream
+                columnName: nti_market
+      changes:
+        - addColumn:
+            tableName: stream
+            columns:
+              - column:
+                  name: nti_market
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: update-db-schema-4
+      author: Arseniy Karmanov
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: team_card
+                columnName: enabled
+      changes:
+        - addColumn:
+            tableName: team_card
+            columns:
+              - column:
+                  name: enabled
+                  type: boolean
+                  constraints:
+                    nullable: false
+                  defaultValue: true
