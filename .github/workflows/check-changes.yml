@@ -11,22 +11,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check for changes in backend
-        id: check-backend-changes
-        run: |
-          changed=$(echo "${{ steps.check-backend-changes.outputs.all_changed_files }}" | tr ' ' '\n' | grep -q '^apps/backend/' && echo "true" || echo "false")
-          echo "backend_modified=$changed" >> $GITHUB_OUTPUT
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          base_sha: ${{ github.pull_request.base.sha }}
 
-      - name: Check for changes in frontend
-        id: check-frontend-changes
+      - name: Check if backend files changed
+        id: backend-changed
         run: |
-          changed=$(echo "${{ steps.check-frontend-changes.outputs.all_changed_files }}" | tr ' ' '\n' | grep -q '^apps/frontend/' && echo "true" || echo "false")
-            echo "frontend_modified=$changed" >> $GITHUB_OUTPUT
+          changed=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr ' ' '\n' | grep -q '^apps/backend/' && echo true || echo false)
+          echo "::set-output name=changed::$changed"
 
       - name: Run backend tests
-        if: ${{ steps.check-backend-changes.outputs.backend_modified == 'true' }}
+        if: steps.backend-changed.outputs.changed == 'true'
         run: ./gradlew :apps:backend:test
-
-      - name: Skip backend tests
-        if: ${{ steps.check-backend-changes.outputs.backend_modified == 'false' }}
-        run: echo "No changes in backend"
