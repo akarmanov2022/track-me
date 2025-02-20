@@ -61,6 +61,10 @@ public class TeamCard {
               nullable = false)
   private User user;
 
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "nti_market_id", nullable = false)
+  private NTIMarket ntiMarket;
+
   @OneToMany(mappedBy = "teamCard",
              cascade = CascadeType.ALL)
   @Builder.Default
