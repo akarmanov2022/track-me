@@ -1,24 +1,15 @@
 plugins {
-    id 'java'
-}
-
-allprojects {
-    group = 'net.akarmanov.projectplace'
-    version = '0.0.2-SNAPSHOT'
-
-    repositories {
-        mavenCentral()
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+    id 'jacoco'
+    id 'org.sonarqube' version '4.0.0.2929'
 }
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'jacoco'
+    apply plugin: 'org.sonarqube'
+
+    group = 'net.akarmanov.projectplace'
+    version = '0.0.2-SNAPSHOT'
 
     repositories {
         mavenCentral()
@@ -26,5 +17,21 @@ subprojects {
 
     test {
         useJUnitPlatform()
+        finalizedBy jacocoTestReport
+    }
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.required = true
+            html.required = true
+        }
+    }
+
+    sonar {
+        properties {
+            property "sonar.language", "java"
+            property "sonar.sourceEncoding", "UTF-8"
+        }
     }
 }
