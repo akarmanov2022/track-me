@@ -1,0 +1,84 @@
+server:
+  port: 8081
+
+app:
+  after-login-endpoint: ${FRONTEND_AFTER_LOGIN_URL:http://127.0.0.1:8081}
+  after-logout-endpoint: ${AFTER_LOGOUT_URI:http://127.0.0.1:8081}
+
+spring:
+  application:
+    name: track-me-gateway
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - http://127.0.0.1:8081
+              - ${FRONTEND_URI:http://localhost:3000}
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+      routes:
+        - id: trackme-backend
+          uri: ${BACKEND_URI:http://localhost:8080}
+          predicates:
+            - Path=/backend/**
+          filters:
+            - TokenRelay
+            - StripPrefix=1
+        - id: trackme-sso
+          uri: ${SSO_URI:http://localhost:9000}
+          predicates:
+            - Path=/sso/**
+          filters:
+            - TokenRelay
+            - StripPrefix=1
+  security:
+    oauth2:
+      client:
+        registration:
+          track-me-client:
+            client-id: ${TRACKME_CLIENT_ID:track-me-client}
+            client-secret: ${TRACKME_CLIENT_SECRET:password}
+            provider: track-me-client
+            client-name: TrackMe SSO
+            client-authentication-method: client_secret_basic
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid, profile
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+        provider:
+          track-me-client:
+            issuer-uri: ${SSO_URI:http://localhost:9000}
+logging:
+  level:
+    org.springframework.security: trace
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    doc-expansion: none
+    operationsSorter: method
+    tagsSorter: alpha
+    try-it-out-enabled: true
+    urls:
+      - name: TrackMe SSO
+        url: ${GATEWAY_URI:http://127.0.0.1:8081}/sso/v3/api-docs
+      - name: TrackMe Backend
+        display-name: TrackMe Backend
+        url: ${GATEWAY_URI:http://127.0.0.1:8081}/backend/v3/api-docs
+    with-credentials: true
+    use-root-path: true
+    csrf:
+      enabled: true
+  api-docs:
+    enabled: true

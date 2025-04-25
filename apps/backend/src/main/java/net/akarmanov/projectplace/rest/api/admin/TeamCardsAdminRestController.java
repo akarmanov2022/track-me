@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import net.akarmanov.projectplace.filters.FilterRequest;
+import net.akarmanov.projectplace.commons.filters.FilterRequest;
 import net.akarmanov.projectplace.rest.api.teamcard.dto.TeamCardCreateOrUpdateDto;
 import net.akarmanov.projectplace.rest.api.teamcard.dto.TeamCardDto;
 import org.springdoc.core.annotations.ParameterObject;
@@ -35,14 +35,14 @@ public interface TeamCardsAdminRestController {
   ResponseEntity<TeamCardDto> createTeamCard(
       @Valid @RequestBody TeamCardCreateOrUpdateDto teamCardDto,
       @RequestParam(required = false) UUID streamId,
-      @RequestParam UUID userId);
+      @RequestParam String username);
 
   @PatchMapping(value = "team-card",
                 consumes = "application/json",
                 produces = "application/json")
   @Operation(summary = "Обновление карточки команды")
   ResponseEntity<TeamCardDto> updateTeamCard(@RequestParam UUID teamCardId,
-                                             @RequestParam UUID userId,
+                                             @RequestParam String username,
                                              @RequestParam(required = false) UUID streamId,
                                              @Valid @RequestBody
                                              TeamCardCreateOrUpdateDto teamCardDto);
@@ -64,7 +64,7 @@ public interface TeamCardsAdminRestController {
                  example = "123e4567-e89b-12d3-a456-426614174000")
       @RequestParam
       UUID id,
-      @RequestParam UUID userId);
+      @RequestParam String username);
 
   @DeleteMapping(value = "team-card")
   @Operation(summary = "Удаление карточки команды")
@@ -73,5 +73,5 @@ public interface TeamCardsAdminRestController {
                  example = "123e4567-e89b-12d3-a456-426614174000")
       @RequestParam
       UUID id,
-      @RequestParam UUID userId);
+      @RequestParam String username);
 }

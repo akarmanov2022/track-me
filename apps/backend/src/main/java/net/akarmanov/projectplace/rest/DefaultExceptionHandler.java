@@ -1,10 +1,9 @@
 package net.akarmanov.projectplace.rest;
 
 import jakarta.validation.ConstraintViolationException;
-import net.akarmanov.projectplace.filters.FilterFieldNotAllowedException;
+import lombok.extern.slf4j.Slf4j;
+import net.akarmanov.projectplace.commons.filters.FilterFieldNotAllowedException;
 import net.akarmanov.projectplace.services.exceptions.PPNotFoundException;
-import net.akarmanov.projectplace.services.reset.ExpiredTokenException;
-import net.akarmanov.projectplace.services.reset.InvalidTokenException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import javax.security.auth.login.AccountLockedException;
 import java.nio.file.AccessDeniedException;
 
+@Slf4j
 @RestControllerAdvice
 public class DefaultExceptionHandler {
   @ResponseBody
@@ -50,7 +50,8 @@ public class DefaultExceptionHandler {
   @ResponseBody
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<RestError> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+  public ResponseEntity<RestError> handleMethodArgumentNotValidException(
+      MethodArgumentNotValidException ex) {
     var errors = ex.getBindingResult().getFieldErrors().stream()
         .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
         .toList();
@@ -61,6 +62,18 @@ public class DefaultExceptionHandler {
         .errors(errors)
         .build();
 
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restError);
+  }
+
+  @ResponseBody
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  @ExceptionHandler(FilterFieldNotAllowedException.class)
+  public ResponseEntity<RestError> handleFilterFieldNotAllowedException(
+      FilterFieldNotAllowedException ex) {
+    var restError = RestError.builder()
+        .code(HttpStatus.BAD_REQUEST.toString())
+        .message(ex.getMessage())
+        .build();
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restError);
   }
 
@@ -87,33 +100,11 @@ public class DefaultExceptionHandler {
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(restError);
   }
 
-  // обработчик ошибок фильтрации сущностей JPA Specification
-  @ResponseBody
-  @ResponseStatus(HttpStatus.BAD_REQUEST)
-  @ExceptionHandler({IllegalArgumentException.class, FilterFieldNotAllowedException.class})
-  public ResponseEntity<RestError> handleIllegalArgumentException(Exception ex) {
-    var restError = RestError.builder()
-        .code(HttpStatus.BAD_REQUEST.toString())
-        .message(ex.getMessage())
-        .build();
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restError);
-  }
-
   @ResponseBody
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   @ExceptionHandler(DataIntegrityViolationException.class)
-  public ResponseEntity<RestError> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
-    var restError = RestError.builder()
-        .code(HttpStatus.BAD_REQUEST.toString())
-        .message(ex.getMessage())
-        .build();
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restError);
-  }
-
-  @ResponseBody
-  @ResponseStatus(HttpStatus.BAD_REQUEST)
-  @ExceptionHandler({InvalidTokenException.class, ExpiredTokenException.class})
-  public ResponseEntity<RestError> handleResetTokenException(Exception ex) {
+  public ResponseEntity<RestError> handleDataIntegrityViolationException(
+      DataIntegrityViolationException ex) {
     var restError = RestError.builder()
         .code(HttpStatus.BAD_REQUEST.toString())
         .message(ex.getMessage())

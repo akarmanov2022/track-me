@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-@WithMockUser(username = BaseApplicationTest.USERNAME,
+@WithMockUser(username = BaseApplicationTest.USER,
               roles = "SUPER_ADMIN")
 class StreamRestControllerTest extends BaseApplicationTest {
 
@@ -233,7 +233,7 @@ class StreamRestControllerTest extends BaseApplicationTest {
         .andExpect(status().isNotFound());
   }
 
-  @Test 
+  @Test
   void getStream_withFilters_byTeamCardReadinessLevel() throws Exception {
     var stream = streamRepository.findAll().get(0);
 

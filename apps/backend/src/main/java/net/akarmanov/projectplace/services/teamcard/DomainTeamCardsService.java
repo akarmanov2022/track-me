@@ -8,7 +8,6 @@ import net.akarmanov.projectplace.repos.TeamCardsRepository;
 import net.akarmanov.projectplace.services.acl.AclService;
 import net.akarmanov.projectplace.services.exceptions.TeamCardNotFoundException;
 import net.akarmanov.projectplace.services.stream.StreamService;
-import net.akarmanov.projectplace.services.user.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,17 +24,13 @@ public class DomainTeamCardsService implements TeamCardsService {
 
   private final TeamCardsRepository teamCardsRepository;
 
-  private final UserService userService;
-
   private final StreamService streamService;
 
   private final AclService aclService;
 
   @Override
   public TeamCard createTeamCard(TeamCard createTeamCard) {
-    var user = userService.getCurrentUser();
     createTeamCard.setStatus(TeamCardStatus.OK);
-    createTeamCard.setUser(user);
     createTeamCard = teamCardsRepository.save(createTeamCard);
     aclService.createAcl(createTeamCard);
     return createTeamCard;
@@ -76,12 +71,11 @@ public class DomainTeamCardsService implements TeamCardsService {
   @Override
   @Transactional
   @PreAuthorize("hasRole('ADMIN')")
-  public TeamCard createTeamCard(TeamCard create, UUID userId) {
-    var user = userService.getUser(userId);
-    create.setUser(user);
+  public TeamCard createTeamCard(TeamCard create, String username) {
+    create.setUsername(username);
     create.setStatus(TeamCardStatus.OK);
     create = teamCardsRepository.save(create);
-    aclService.updateAcl(create, user.getUsername());
+    aclService.updateAcl(create, username);
     return create;
   }
 
@@ -89,18 +83,16 @@ public class DomainTeamCardsService implements TeamCardsService {
   @PreAuthorize("hasRole('ADMIN')")
   public TeamCard updateTeamCard(UUID teamCardId,
                                  TeamCard teamCardDto,
-                                 UUID streamId,
-                                 UUID userId) {
-    var teamCard = get(teamCardId, userId);
+                                 UUID streamId, String username) {
+    var teamCard = get(teamCardId, username);
     updateTeamCard(teamCardDto, teamCard);
-    var user = userService.getUser(userId);
-    teamCard.setUser(user);
+    teamCard.setUsername(username);
     if (streamId != null) {
       var stream = streamService.getById(streamId);
       teamCard.addStream(stream);
     }
     teamCard = teamCardsRepository.save(teamCard);
-    aclService.updateAcl(teamCard, user.getUsername());
+    aclService.updateAcl(teamCard, username);
     return teamCard;
   }
 
@@ -111,27 +103,27 @@ public class DomainTeamCardsService implements TeamCardsService {
 
   @Override
   @PreAuthorize("hasRole('ADMIN')")
-  public TeamCard getTeamCard(UUID id, UUID userId) {
-    return get(id, userId);
+  public TeamCard getTeamCard(UUID id, String username) {
+    return get(id, username);
   }
 
   @Override
   @PreAuthorize("hasRole('ADMIN')")
-  public void deleteTeamCard(UUID id, UUID userId) {
-    var teamCard = get(id, userId);
+  public void deleteTeamCard(UUID id, String username) {
+    var teamCard = get(id, username);
     aclService.deleteAcl(teamCard);
-    teamCardsRepository.deleteByIdAndUserId(id, userId);
+    teamCardsRepository.deleteByIdAndUsername(id, username);
   }
 
   @Override
   @Transactional
   @PreAuthorize("hasRole('ADMIN')")
-  public TeamCard createTeamCard(TeamCard teamCard, UUID streamId, UUID userId) {
+  public TeamCard createTeamCard(TeamCard teamCard, UUID streamId, String username) {
     if (streamId != null) {
       var stream = streamService.getById(streamId);
       teamCard.addStream(stream);
     }
-    return createTeamCard(teamCard, userId);
+    return createTeamCard(teamCard, username);
   }
 
   @Override
@@ -139,9 +131,9 @@ public class DomainTeamCardsService implements TeamCardsService {
     return teamCardsRepository.countByStreamsIdIn(Collections.singletonList(streamId));
   }
 
-  private TeamCard get(UUID teamCardId, UUID userId) {
-    return teamCardsRepository.findByIdAndUserId(teamCardId, userId)
-        .orElseThrow(() -> new TeamCardNotFoundException(teamCardId, userId));
+  private TeamCard get(UUID teamCardId, String username) {
+    return teamCardsRepository.findByIdAndUsername(teamCardId, username)
+        .orElseThrow(() -> new TeamCardNotFoundException(teamCardId, username));
   }
 
   private void updateTeamCard(TeamCard source, TeamCard target) {

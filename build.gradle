@@ -1,40 +1,21 @@
 plugins {
-    id 'java'
-    id 'war'
     id 'jacoco'
     id 'org.sonarqube' version '4.0.0.2929'
+    id 'org.springframework.boot' version '3.4.0' apply false
+    id 'io.spring.dependency-management' version '1.1.6' apply false
+    id 'com.github.node-gradle.node' version '7.0.2' apply false
 }
 
+gradle.startParameter.parallelProjectExecutionEnabled = true
+
 subprojects {
-    apply plugin: 'war'
-    apply plugin: 'java'
-    apply plugin: 'jacoco'
     apply plugin: 'org.sonarqube'
 
-    group = 'net.akarmanov.projectplace'
+    group = 'net.akarmanov.trackme'
     version = '0.0.2-SNAPSHOT'
 
     repositories {
         mavenCentral()
-    }
-
-    java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(21)
-        }
-    }
-
-    test {
-        useJUnitPlatform()
-        finalizedBy jacocoTestReport
-    }
-
-    jacocoTestReport {
-        dependsOn test
-        reports {
-            xml.required = true
-            html.required = true
-        }
     }
 
     sonar {

@@ -4,14 +4,13 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import net.akarmanov.projectplace.commons.filters.Filter;
+import net.akarmanov.projectplace.commons.filters.FilterFieldNotAllowedException;
 import net.akarmanov.projectplace.domain.TeamCard;
-import net.akarmanov.projectplace.filters.Filter;
-import net.akarmanov.projectplace.filters.FilterFieldNotAllowedException;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static net.akarmanov.projectplace.domain.spec.SpecificationUtils.getReadinessLevelFilter;
 
@@ -26,7 +25,7 @@ public class TeamCardSpecification implements Specification<TeamCard> {
       "ntiMarket.name",
       "description",
       "status",
-      "user.telegramId",
+      "username",
       READINESS_LEVEL_FIELD_NAME,
       STREAMS_YEAR_FIELD,
       "streams.name"
@@ -56,11 +55,9 @@ public class TeamCardSpecification implements Specification<TeamCard> {
     };
   }
 
-  public static Specification<TeamCard> userEquals(UUID userId) {
-    return (root, query, criteriaBuilder) -> {
-      var userJoin = root.join("user");
-      return criteriaBuilder.equal(userJoin.get("id"), userId);
-    };
+  public static Specification<TeamCard> userEquals(String username) {
+    return (root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("username"), username);
   }
 
   public static TeamCardSpecification withFilters(List<Filter> filters) {

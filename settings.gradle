@@ -1,6 +1,17 @@
-rootProject.name = 'track-me'
-
+rootProject.name = 'trackme'
 
 include ':backend'
 project(':backend').projectDir = file('apps/backend')
+
+include ':frontend'
+project(':frontend').projectDir = file('apps/frontend')
+
+include ':trackme-gateway'
+project(':trackme-gateway').projectDir = file('apps/trackme-gateway')
+
+include ':trackme-sso'
+project(':trackme-sso').projectDir = file('services/trackme-sso')
+
+include ':commons'
+findProject(':commons').projectDir = file('libs/commons')
 

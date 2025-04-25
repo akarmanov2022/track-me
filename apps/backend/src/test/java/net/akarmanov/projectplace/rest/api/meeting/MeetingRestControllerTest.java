@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WithMockUser(BaseApplicationTest.USERNAME)
+@WithMockUser(value = BaseApplicationTest.USER, roles = {"TRACKER"})
 class MeetingRestControllerTest extends BaseApplicationTest {
 
   @Autowired
@@ -51,6 +51,7 @@ class MeetingRestControllerTest extends BaseApplicationTest {
     teamCard = teamCardsService.createTeamCard(TeamCard.builder()
         .name("Test")
         .description("Test")
+        .username(BaseApplicationTest.USER)
         .ntiMarket(ntiMarketRepository.findAll().getFirst())
         .readinessLevel(ReadinessLevel.LEVEL_1)
         .build());

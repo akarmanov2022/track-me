@@ -29,13 +29,10 @@ spring:
 
   liquibase:
     enabled: true
-    default-schema: public
+    default-schema: backend
+    liquibase-schema: backend
 
 app:
   acl:
     class-identity-query: "select currval(pg_get_serial_sequence('acl_class', 'id'))"
     sid-identity-query: "select currval(pg_get_serial_sequence('acl_sid', 'id'))"
-
-  superadmin:
-    username: ${ADMIN_USERNAME:superadmin}
-    password: ${ADMIN_PASSWORD:superadmin}
