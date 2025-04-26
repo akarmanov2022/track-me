@@ -11,28 +11,50 @@ on:
   push:
     tags:
       - 'v*.*.*'
-    branches: [ develop ]
+    branches:
+      - develop
     paths-ignore:
       - 'README.md'
       - 'LICENSE'
       - 'docs/**'
 
 jobs:
-  login-to-ghcr:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      sso: ${{ steps.filter.outputs.sso }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Filter changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'apps/backend/**'
+            gateway:
+              - 'apps/trackme-gateway/**'
+            sso:
+              - 'services/trackme-sso/**'
+            frontend:
+              - 'apps/frontend/**'
+
+  trackme-backend-build-push:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-  trackme-backend-build-push:
-    needs: login-to-ghcr
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -42,63 +64,102 @@ jobs:
       - name: Build and Push Backend Image
         uses: docker/build-push-action@v5
         with:
-          context: apps/backend
+          context: .
+          file: apps/backend/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/backend:latest
             ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
+          #            ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   trackme-client-build-push:
-    needs: login-to-ghcr
+    needs: changes
+    if: needs.changes.outputs.gateway == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
       - name: Build and Push trackme-client Image
         uses: docker/build-push-action@v5
         with:
-          context: apps/trackme-gateway
+          context: .
+          file: apps/trackme-gateway/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/gateway:latest
             ghcr.io/${{ github.repository }}/gateway:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/gateway:${{ github.ref_name }}
+          #            ghcr.io/${{ github.repository }}/gateway:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   trackme-sso-build-push:
-    needs: login-to-ghcr
+    needs: changes
+    if: needs.changes.outputs.sso == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
       - name: Build and Push trackme-sso Image
         uses: docker/build-push-action@v5
         with:
-          context: services/trackme-sso
+          context: .
+          file: services/trackme-sso/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/sso:latest
             ghcr.io/${{ github.repository }}/sso:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/sso:${{ github.ref_name }}
+          #            ghcr.io/${{ github.repository }}/sso:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   trackme-frontend-build-push:
-    needs: login-to-ghcr
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
       - name: Build and Push trackme-frontend Image
         uses: docker/build-push-action@v5
         with:
           context: apps/frontend
           push: true
+          secret-envs: |
+            NODE_ENV=development
+            REACT_APP_ENV=stage
           tags: |
             ghcr.io/${{ github.repository }}/frontend:latest
             ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
+          #            ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -108,6 +169,15 @@ jobs:
       - trackme-client-build-push
       - trackme-sso-build-push
       - trackme-frontend-build-push
+    if: |
+      always() &&
+      (
+        needs.trackme-backend-build-push.result == 'success' ||
+        needs.trackme-client-build-push.result == 'success' ||
+        needs.trackme-sso-build-push.result == 'success' ||
+        needs.trackme-frontend-build-push.result == 'success'
+      )
+
     runs-on: ubuntu-latest
     steps:
       - name: Set Environment Variables and Deploy via SSH
@@ -123,12 +193,10 @@ jobs:
             cd /home/${{ secrets.SSH_USERNAME }}/track-me
 
             # Создать .env файл с переменными окружения
-            rm -f .env .env.local
+            rm -f .env
 
-            echo "REACT_APP_CLIENT_GATEWAY_URI=${{ secrets.API_V1_BASE_URL }}" >> .env
-            echo "GITHUB_CLIENT_ID=${{ secrets.GITHUB_CLIENT_ID }}" >> .env
-            echo "GITHUB_CLIENT_SECRET=${{ secrets.GITHUB_CLIENT_SECRET }}" >> .env
-            echo "FRONTEND_URI=${{ secrets.FRONTEND_URI }}" >> .env
+            echo "REACT_APP_CLIENT_GATEWAY_URI=${{ secrets.API_V1_BASE_URL }}/api" >> .env
+            echo "FRONTEND_URI=https://xn--e1aaowdh.xn----gtbbcb4bjf2ak.xn--p1ai" >> .env
             echo "BACKEND_URI=${{ secrets.API_V1_BASE_URL }}" >> .env
             echo "MAIL_HOST=${{ secrets.MAIL_HOST }}" >> .env
             echo "MAIL_PORT=${{ secrets.MAIL_PORT }}" >> .env
@@ -136,23 +204,22 @@ jobs:
             echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
             echo "MAIL_FROM=${{ secrets.MAIL_FROM }}" >> .env
             echo "MAIL_SUBJECT=${{ secrets.MAIL_SUBJECT }}" >> .env
-            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-            echo "DB_URL=${{ secrets.DB_URL }}" >> .env
-            echo "TRACKME_CLIENT_ID=${{ secrets.TRACKME_CLIENT_ID }}" >> .env
-            echo "TRACKME_CLIENT_SECRET=${{ secrets.TRACKME_CLIENT_SECRET }}" >> .env
             echo "SSO_URI=${{ secrets.API_V1_BASE_URL }}/sso" >> .env
-            echo "AFTER_LOGOUT_URI=${{ secrets.FRONTEND_URI }}" >> .env
+            echo "AFTER_LOGOUT_URI=https://xn--e1aaowdh.xn----gtbbcb4bjf2ak.xn--p1ai" >> .env
+            echo "AFTER_LOGIN_URL=https://xn--e1aaowdh.xn----gtbbcb4bjf2ak.xn--p1ai/after-login" >> .env
             echo "GATEWAY_URI=${{ secrets.API_V1_BASE_URL }}/api" >> .env
-            echo "NODE_ENV=development" >> .env
-            echo "REACT_APP_ENV=dev" >> .env
+            cat .env.dev.redis | tr -d '\r' >> .env
+            echo "" >> .env
+            cat .env.dev.database | tr -d '\r' >> .env
+            echo "" >> .env
+            cat .env.dev.sso | tr -d '\r' >> .env
 
             # Скачать новые версии image'ей
-            docker compose -f docker/docker-compose.dev.yml pull
+            docker compose -f docker-compose.dev.yml pull
 
             # Остановить текущие контейнеры и поднять новые
-            docker compose -f docker/docker-compose.dev.yml down
-            docker compose -f docker/docker-compose.dev.yml up -d
+            docker compose -f docker-compose.dev.yml down
+            docker compose -f docker-compose.dev.yml up -d 
 
       - name: Restart Nginx
         uses: appleboy/ssh-action@master
@@ -161,5 +228,17 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
+            until curl -sf http://localhost:8080/actuator/health; do
+            echo "Waiting for backend..."
+            sleep 5
+            done
+            until curl -sf http://localhost:9000/actuator/health; do
+            echo "Waiting for sso..."
+            sleep 5
+            done
+            until curl -sf http://localhost:3001/actuator/health; do
+            echo "Waiting for frontend..."
+            sleep 5
+            done
             cd /home/vmv94/gateway/
             make restart

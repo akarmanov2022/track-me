@@ -2,7 +2,7 @@ server:
   port: 8081
 
 app:
-  after-login-endpoint: ${FRONTEND_AFTER_LOGIN_URL:http://127.0.0.1:8081}
+  after-login-endpoint: ${AFTER_LOGIN_URL:http://127.0.0.1:8081}
   after-logout-endpoint: ${AFTER_LOGOUT_URI:http://127.0.0.1:8081}
 
 spring:
@@ -27,14 +27,14 @@ spring:
             allowCredentials: true
       routes:
         - id: trackme-backend
-          uri: ${BACKEND_URI:http://localhost:8080}
+          uri: http://track-me-backend:8080
           predicates:
             - Path=/backend/**
           filters:
             - TokenRelay
             - StripPrefix=1
         - id: trackme-sso
-          uri: ${SSO_URI:http://localhost:9000}
+          uri: http://track-me-sso:9000
           predicates:
             - Path=/sso/**
           filters:
@@ -62,6 +62,7 @@ spring:
 logging:
   level:
     org.springframework.security: trace
+    org.springframework.cloud.gateway: debug
 
 springdoc:
   swagger-ui:
@@ -77,8 +78,8 @@ springdoc:
         display-name: TrackMe Backend
         url: ${GATEWAY_URI:http://127.0.0.1:8081}/backend/v3/api-docs
     with-credentials: true
-    use-root-path: true
     csrf:
       enabled: true
+    use-root-path: true
   api-docs:
     enabled: true
