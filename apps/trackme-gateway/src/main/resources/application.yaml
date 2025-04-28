@@ -14,7 +14,6 @@ spring:
         corsConfigurations:
           '[/**]':
             allowedOrigins:
-              - http://127.0.0.1:8081
               - ${FRONTEND_URI:http://localhost:3000}
             allowedMethods:
               - GET
@@ -83,3 +82,41 @@ springdoc:
     use-root-path: true
   api-docs:
     enabled: true
+
+---
+spring:
+  profiles:
+    active: development
+  cloud:
+    gateway:
+      routes:
+        - id: trackme-backend
+          uri: http://localhost:8080
+          predicates:
+            - Path=/backend/**
+          filters:
+            - TokenRelay
+            - StripPrefix=1
+        - id: trackme-sso
+          uri: http://localhost:9000
+          predicates:
+            - Path=/sso/**
+          filters:
+            - TokenRelay
+            - StripPrefix=1
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - ${FRONTEND_URI:http://localhost:3000}
+              - http://127.0.0.1:8081
+              - http://127.0.0.1:3000
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
