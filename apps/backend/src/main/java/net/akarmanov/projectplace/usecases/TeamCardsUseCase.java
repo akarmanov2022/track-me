@@ -8,7 +8,7 @@ import net.akarmanov.projectplace.models.TeamCardStatus;
 import net.akarmanov.projectplace.rest.api.teamcard.dto.TeamCardCreateOrUpdateDto;
 import net.akarmanov.projectplace.rest.api.teamcard.dto.TeamCardDto;
 import net.akarmanov.projectplace.services.nti.NtiMarketService;
-import net.akarmanov.projectplace.services.stream.StreamService;
+import net.akarmanov.projectplace.services.stream.MutableStreamService;
 import net.akarmanov.projectplace.services.teamcard.TeamCardsService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,38 +24,36 @@ import static net.akarmanov.projectplace.domain.spec.TeamCardSpecification.withF
 
 @Component
 @RequiredArgsConstructor
-public class UserTeamCardsUseCaseImpl implements UserTeamCardsUseCase {
+public class TeamCardsUseCase {
 
   private final TeamCardsService teamCardsService;
 
-  private final StreamService streamService;
+  private final MutableStreamService streamService;
 
   private final TeamCardMapper teamCardMapper;
 
   private final NtiMarketService ntiMarketService;
 
-  @Override
   @Transactional
-  public TeamCardDto createTeamCard(TeamCardCreateOrUpdateDto teamCard, UUID streamId,
+  public TeamCardDto createTeamCard(TeamCardCreateOrUpdateDto teamCardDto, UUID streamId,
                                     Authentication authentication) {
     var username = authentication.getName();
-    var ntiMarketId = teamCard.ntiMarketId();
+    var ntiMarketId = teamCardDto.ntiMarketId();
 
     var stream = streamService.findActive(streamId);
-    var teamCardEntity = teamCardMapper.mapToEntity(teamCard);
+    var teamCardEntity = teamCardMapper.mapToEntity(teamCardDto);
     var ntiMarket = ntiMarketService.getNtiMarket(ntiMarketId);
 
     teamCardEntity.setNtiMarket(ntiMarket);
     teamCardEntity.setUsername(username);
     teamCardEntity.addStream(stream);
     teamCardEntity.setStatus(TeamCardStatus.OK);
+
     var createdTeamCard = teamCardsService.createTeamCard(teamCardEntity);
-    stream.addTeamCard(createdTeamCard);
-    streamService.save(stream);
     return teamCardMapper.mapToDto(createdTeamCard);
   }
 
-  @Override
+
   public TeamCardDto updateTeamCard(UUID teamCardId, TeamCardCreateOrUpdateDto createOrUpdateDto) {
     var ntMarketId = createOrUpdateDto.ntiMarketId();
     var teamCard = teamCardMapper.mapToEntity(createOrUpdateDto);
@@ -64,7 +62,6 @@ public class UserTeamCardsUseCaseImpl implements UserTeamCardsUseCase {
     return teamCardMapper.mapToDto(updatedTeamCard);
   }
 
-  @Override
   public Page<TeamCardDto> getTeamCards(List<Filter> filters,
                                         Authentication authentication,
                                         Pageable pageable) {
@@ -74,19 +71,16 @@ public class UserTeamCardsUseCaseImpl implements UserTeamCardsUseCase {
     return page.map(teamCardMapper::mapToDto);
   }
 
-  @Override
   @PreAuthorize("hasPermission(#teamCardId, 'net.akarmanov.projectplace.domain.TeamCard', 'READ')")
   public TeamCardDto getTeamCard(UUID teamCardId) {
     var teamCard = teamCardsService.getTeamCard(teamCardId);
     return teamCardMapper.mapToDto(teamCard);
   }
 
-  @Override
   public void deleteTeamCard(UUID id) {
     teamCardsService.deleteTeamCard(id);
   }
 
-  @Override
   public Integer getTeamCardCount(UUID streamId) {
     return teamCardsService.getTeamCardCount(streamId);
   }
