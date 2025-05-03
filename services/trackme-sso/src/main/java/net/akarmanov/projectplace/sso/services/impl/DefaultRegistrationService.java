@@ -9,7 +9,6 @@ import net.akarmanov.projectplace.sso.components.RegistrationTokenStore;
 import net.akarmanov.projectplace.sso.config.AppProperties;
 import net.akarmanov.projectplace.sso.dto.RegistrationRequestDto;
 import net.akarmanov.projectplace.sso.dto.RegistrationToken;
-import net.akarmanov.projectplace.sso.exception.ConfirmRegistrationException;
 import net.akarmanov.projectplace.sso.exception.InformationException;
 import net.akarmanov.projectplace.sso.services.EmailService;
 import net.akarmanov.projectplace.sso.services.RegistrationService;
@@ -44,17 +43,17 @@ public class DefaultRegistrationService implements RegistrationService {
       throw InformationException.builder("$account.already.exist").build();
     }
 
-    RegistrationToken registrationToken = tokenStore.generateToken(response);
-    var sessionId = registrationToken.sessionId();
+    RegistrationToken registrationToken = tokenStore.generateToken();
+    var tokenHash = registrationToken.tokenHash();
     var token = registrationToken.token();
 
     try {
-      registrationStore.save(requestDto, sessionId);
+      registrationStore.save(requestDto, tokenHash);
     } catch (Exception e) {
       throw InformationException.builder("$happened.unexpected.error").build();
     }
 
-    log.info("Registration token = {}. SessionId = {}", token, sessionId);
+    log.info("Registration token = {}. Hash = {}", token, tokenHash);
 
     emailService.sendMail(
         requestDto.email(),
@@ -63,26 +62,19 @@ public class DefaultRegistrationService implements RegistrationService {
         "email-confirmation.html",
         Map.of(
             "email", requestDto.email(),
-            "token", token,
             "appName", appProperties.getMail().getSubject(),
             "supportEmail", appProperties.getMail().getFrom(),
-            "confirmationLink", getConfirmationLink(token)));
+                "confirmationLink", getConfirmationLink(tokenHash)));
   }
 
   @Override
   public void confirm(String token, HttpServletRequest request) {
-    if (tokenStore.isTokenValid(token, request)) {
+    if (!tokenStore.isTokenValid(token)) {
       throw InformationException.builder("$happened.unexpected.error").build();
     }
-    var sessionId = tokenStore.getSessionId(request);
-
-    if (sessionId == null) {
-      throw new ConfirmRegistrationException("$registration.confirm.error.no.session.id");
-    }
-
-    registrationStore.take(sessionId)
+    registrationStore.take(token)
         .ifPresentOrElse(userService::saveUser,
-            () -> log.error("Registration token not found for sessionId: {}", sessionId));
+                () -> log.error("Registration token not found for tokenHash: {}", token));
   }
 
   private String getConfirmationLink(String token) {

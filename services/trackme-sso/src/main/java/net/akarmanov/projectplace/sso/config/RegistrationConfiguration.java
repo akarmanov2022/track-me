@@ -15,28 +15,25 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @RequiredArgsConstructor
 @EnableConfigurationProperties(RegistrationStoreProperties.class)
 public class RegistrationConfiguration {
-  private final RegistrationStoreProperties registrationStoreProperties;
+    private final RegistrationStoreProperties registrationStoreProperties;
 
-  @Bean
-  RegistrationStore redisRegistrationStore(
-      StringRedisTemplate stringRedisTemplate,
-      ObjectMapper objectMapper) {
-    return new RedisRegistrationStore(
-        registrationStoreProperties.getCookieMaxAge(),
-        stringRedisTemplate,
-        stringRedisTemplate.opsForValue(),
-        objectMapper);
-  }
+    @Bean
+    RegistrationStore redisRegistrationStore(
+            StringRedisTemplate stringRedisTemplate,
+            ObjectMapper objectMapper) {
+        return new RedisRegistrationStore(
+                registrationStoreProperties.getCookieMaxAge(),
+                stringRedisTemplate,
+                stringRedisTemplate.opsForValue(),
+                objectMapper);
+    }
 
-  @Bean
-  RegistrationTokenStore redisRegistrationTokenStore(
-      StringRedisTemplate stringRedisTemplate) {
-    return new RedisRegistrationTokenStore(
-        stringRedisTemplate,
-        stringRedisTemplate.opsForValue(),
-        registrationStoreProperties.getCookieMaxAge(),
-        registrationStoreProperties.getCookieName(),
-        registrationStoreProperties.getCookieDomain()
-    );
-  }
+    @Bean
+    RegistrationTokenStore redisRegistrationTokenStore(
+            StringRedisTemplate stringRedisTemplate) {
+        return new RedisRegistrationTokenStore(
+                stringRedisTemplate,
+                stringRedisTemplate.opsForValue()
+        );
+    }
 }
