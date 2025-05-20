@@ -84,13 +84,17 @@ public class TeamCardsServiceImpl implements TeamCardsService {
     @PreAuthorize("hasRole('ADMIN')")
     public TeamCard updateTeamCard(UUID teamCardId,
                                    TeamCard teamCardDto,
-                                   UUID streamId, String username) {
-        var teamCard = get(teamCardId, username);
+                                   UUID streamId,
+                                   String username) {
+        var teamCard = get(teamCardId);
         updateTeamCard(teamCardDto, teamCard);
-        teamCard.setUsername(username);
         if (streamId != null) {
             var stream = streamService.getById(streamId);
             teamCard.addStream(stream);
+        }
+        if (username != null) {
+            teamCard.setUsername(username);
+            aclService.updateAclOwner(teamCard, username);
         }
         return teamCardsRepository.save(teamCard);
     }
