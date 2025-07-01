@@ -1,15 +1,14 @@
 package net.trackme.backend.rest.api.meeting;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Pattern;
+import jakarta.annotation.Nullable;
 import lombok.Builder;
 import net.trackme.backend.models.MeetingStatus;
 
 @Builder
 @Schema(description = "DTO обновления встречи команды")
 public record MeetingUpdateDto(
-        @Pattern(regexp = "^(http|https)://.*$",
-                message = "Ссылка на встречу должна начинаться с http:// или https://")
+        @Nullable
         @Schema(description = "Ссылка на встречу")
         String link,
         @Schema(description = "Номер встречи")
