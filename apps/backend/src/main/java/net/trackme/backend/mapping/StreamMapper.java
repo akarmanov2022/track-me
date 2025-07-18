@@ -1,12 +1,10 @@
 package net.trackme.backend.mapping;
 
 import net.trackme.backend.domain.Stream;
-import net.trackme.backend.rest.api.dto.StreamCreateDto;
-import net.trackme.backend.rest.api.dto.StreamDto;
-import net.trackme.backend.rest.api.dto.StreamUpdateDto;
+import net.trackme.backend.rest.api.stream.StreamCreateDto;
+import net.trackme.backend.rest.api.stream.StreamDto;
+import net.trackme.backend.rest.api.stream.StreamUpdateDto;
 import org.mapstruct.*;
-
-import java.util.List;
 
 @Mapper(componentModel = "spring",
         uses = {NtiMarketMapper.class},
@@ -14,16 +12,8 @@ import java.util.List;
         nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
 public interface StreamMapper {
 
-    @Mapping(target = "imageBytes", ignore = true)
-    @Mapping(target = "teamCards", ignore = true)
-    Stream mapFromDto(StreamDto dto);
-
     @Mapping(target = "active", expression = "java( entity.isActive() )")
     StreamDto mapToDto(Stream entity);
-
-    List<Stream> mapFromDto(List<StreamDto> dtos);
-
-    List<StreamDto> mapToDto(List<Stream> entities);
 
     @Mapping(target = "ntiMarkets", ignore = true)
     @Mapping(target = "imageBytes", ignore = true)

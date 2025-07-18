@@ -1,17 +1,13 @@
 plugins {
-    id 'jacoco'
-    id 'org.sonarqube' version '4.0.0.2929'
-    id 'org.springframework.boot' version '3.4.4' apply false
-    id 'io.spring.dependency-management' version '1.1.6' apply false
-    id 'com.github.node-gradle.node' version '7.0.2' apply false
+    id 'org.sonarqube' version '5.0.0.4638'
+    id 'org.springframework.boot' version '3.4.4'
+    id 'io.freefair.lombok' version '8.14'
 }
 
 gradle.startParameter.parallelProjectExecutionEnabled = true
 
 subprojects {
-    apply plugin: 'org.sonarqube'
-
-    group = 'net.akarmanov.trackme'
+    group = 'net.trackme'
     version = '0.0.3-SNAPSHOT'
 
     repositories {
@@ -19,7 +15,7 @@ subprojects {
     }
 }
 
-sonar {
+sonarqube {
     properties {
         property "sonar.language", "java"
         property "sonar.sourceEncoding", "UTF-8"
