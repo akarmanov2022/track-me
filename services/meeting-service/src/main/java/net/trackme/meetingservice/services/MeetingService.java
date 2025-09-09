@@ -24,4 +24,5 @@ public interface MeetingService {
     void addMeetingImage(UUID meetingId, MultipartFile file);
 
     Resource getMeetingImage(UUID meetingId);
+
 }
