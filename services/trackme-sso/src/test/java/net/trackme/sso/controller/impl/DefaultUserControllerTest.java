@@ -6,14 +6,12 @@ import net.trackme.sso.services.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -84,14 +82,12 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
         .isFalse();
 
     mockMvc.perform(post("/api/v1/users/disable")
-                    .param("username", "tracker")
-                    .with(csrf()))
-            .andExpect(status().isOk());
+           .param("username", "tracker")
+           .with(csrf()))
+        .andExpect(status().isOk());
 
-    assertThrows(
-            UsernameNotFoundException.class,
-            () -> userDetailsService.loadUserByUsername("tracker")
-    );
+    assertThat(userService.findByUsername("tracker").getAccountNonLocked())
+        .isFalse();
   }
 
   @Test

@@ -18,8 +18,6 @@ public interface UserService {
 
     void save(UserEntity userEntity);
 
-  void delete(UserEntity userEntity);
-
   void changePassword(String username, String newPassword, String oldPassword);
 
   UserEntity findByUsername(String name);
