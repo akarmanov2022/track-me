@@ -136,10 +136,6 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void findAllTrackers_success() throws Exception {
-    var userEntity = userService.findByUsername("tracker");
-    userEntity.setAccountNonLocked(true);
-    userService.save(userEntity);
-
     mockMvc.perform(post("/api/v1/users/trackers")
             .contentType("application/json")
             .content("""
@@ -191,29 +187,7 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
 
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
-  void findAllTrackers_lockedAccount() throws Exception {
-    var userEntity = userService.findByUsername("tracker");
-    userEntity.setAccountNonLocked(false);
-    userService.save(userEntity);
-
-    mockMvc.perform(post("/api/v1/users/trackers")
-                    .contentType("application/json")
-                    .content("""
-                            {"filters": []}
-                            """)
-                    .with(csrf()))
-            .andExpect(status().isOk())
-            .andExpect(header().string("Content-Type", "application/json"))
-            .andExpect(jsonPath("$.content").isEmpty());
-  }
-
-  @Test
-  @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void findAllAdmins_success() throws Exception {
-    var userEntity = userService.findByUsername("admin");
-    userEntity.setAccountNonLocked(true);
-    userService.save(userEntity);
-
     mockMvc.perform(post("/api/v1/users/administrators")
             .contentType("application/json")
             .content("""
@@ -223,23 +197,5 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "application/json"))
         .andExpect(jsonPath("$.content[0].username").value("admin"));
-  }
-
-  @Test
-  @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
-  void findAllAdmins_lockedAccount() throws Exception {
-    var userEntity = userService.findByUsername("admin");
-    userEntity.setAccountNonLocked(false);
-    userService.save(userEntity);
-
-    mockMvc.perform(post("/api/v1/users/administrators")
-                    .contentType("application/json")
-                    .content("""
-                            {"filters": []}
-                            """)
-                    .with(csrf()))
-            .andExpect(status().isOk())
-            .andExpect(header().string("Content-Type", "application/json"))
-            .andExpect(jsonPath("$.content").isEmpty());
   }
 }

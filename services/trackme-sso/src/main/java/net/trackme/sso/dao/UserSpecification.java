@@ -30,11 +30,6 @@ public class UserSpecification implements Specification<UserEntity> {
     };
   }
 
-  public static Specification<UserEntity> nonLockedAccounts() {
-    return (root, query, criteriaBuilder) ->
-            criteriaBuilder.equal(root.get("accountNonLocked"), true);
-  }
-
   public static Specification<UserEntity> withFilters(List<Filter> filters) {
     return new UserSpecification(filters);
   }
