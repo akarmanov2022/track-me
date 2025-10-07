@@ -21,8 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import static net.trackme.sso.dao.UserSpecification.byRole;
-import static net.trackme.sso.dao.UserSpecification.withFilters;
+import static net.trackme.sso.dao.UserSpecification.*;
 
 @Service
 @RequiredArgsConstructor
@@ -88,6 +87,11 @@ public class DefaultUserService implements UserService {
   @Override
   @Transactional
   public void disableUser(String username) {
+    var userEntity = findByUsername(username);
+    if (!userEntity.getActive()){
+      userEntity.setAccountNonLocked(false);
+      save(userEntity);
+    }
     changeActivity(username, false);
   }
 
@@ -111,7 +115,7 @@ public class DefaultUserService implements UserService {
   public Page<UserDto> getTrackers(FilterRequest filterRequest, Pageable pageable) {
     var filters = filterRequest.filters();
     var trackers = userRepository.findAll(
-        withFilters(filters).and(byRole("TRACKER")),
+        withFilters(filters).and(byRole("TRACKER")).and(nonLockedAccounts()),
         pageable);
     return trackers.map(userMapper::userEntityToUserDto);
   }
@@ -120,7 +124,7 @@ public class DefaultUserService implements UserService {
   public Page<UserDto> getAdmins(FilterRequest filterRequest, Pageable pageable) {
     var filters = filterRequest.filters();
     var admins = userRepository.findAll(
-        withFilters(filters).and(byRole("ADMIN")),
+        withFilters(filters).and(byRole("ADMIN")).and(nonLockedAccounts()),
         pageable);
     return admins.map(userMapper::userEntityToUserDto);
   }
