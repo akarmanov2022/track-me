@@ -88,7 +88,7 @@ public class DefaultUserService implements UserService {
   @Transactional
   public void disableUser(String username) {
     var userEntity = findByUsername(username);
-    if (!userEntity.getActive()){
+    if (Boolean.FALSE.equals(userEntity.getActive())){
       userEntity.setAccountNonLocked(false);
       save(userEntity);
     }
