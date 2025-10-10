@@ -14,8 +14,7 @@ import java.util.List;
 public class UserSpecification implements Specification<UserEntity> {
 
   private static final List<String> ALLOWED_FIELDS =
-      List.of("fullName", "username");
-
+      List.of("fullName", "username", "accountNonLocked");
 
   private final transient List<Filter> filters;
 
@@ -28,11 +27,6 @@ public class UserSpecification implements Specification<UserEntity> {
       var roleJoin = root.join("roles");
       return criteriaBuilder.equal(roleJoin.get("code"), role);
     };
-  }
-
-  public static Specification<UserEntity> nonLockedAccounts() {
-    return (root, query, criteriaBuilder) ->
-            criteriaBuilder.equal(root.get("accountNonLocked"), true);
   }
 
   public static Specification<UserEntity> withFilters(List<Filter> filters) {

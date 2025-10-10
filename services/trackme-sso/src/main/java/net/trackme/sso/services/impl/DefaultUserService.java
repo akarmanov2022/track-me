@@ -88,7 +88,7 @@ public class DefaultUserService implements UserService {
   @Transactional
   public void disableUser(String username) {
     var userEntity = findByUsername(username);
-    if (!userEntity.getActive()){
+    if (Boolean.FALSE.equals(userEntity.getActive())){
       userEntity.setAccountNonLocked(false);
       save(userEntity);
     }
@@ -115,7 +115,7 @@ public class DefaultUserService implements UserService {
   public Page<UserDto> getTrackers(FilterRequest filterRequest, Pageable pageable) {
     var filters = filterRequest.filters();
     var trackers = userRepository.findAll(
-        withFilters(filters).and(byRole("TRACKER")).and(nonLockedAccounts()),
+        withFilters(filters).and(byRole("TRACKER")),
         pageable);
     return trackers.map(userMapper::userEntityToUserDto);
   }
@@ -124,7 +124,7 @@ public class DefaultUserService implements UserService {
   public Page<UserDto> getAdmins(FilterRequest filterRequest, Pageable pageable) {
     var filters = filterRequest.filters();
     var admins = userRepository.findAll(
-        withFilters(filters).and(byRole("ADMIN")).and(nonLockedAccounts()),
+        withFilters(filters).and(byRole("ADMIN")),
         pageable);
     return admins.map(userMapper::userEntityToUserDto);
   }
