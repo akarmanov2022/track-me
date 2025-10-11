@@ -118,7 +118,7 @@ class TeamCardsAdminRestControllerTest extends BaseApplicationTest {
 
     @Test
     @WithMockUser(value = BaseApplicationTest.USER, roles = "SUPER_ADMIN")
-    void getTeamCards_success() throws Exception{
+    void getTeamCards_success() throws Exception {
         teamCardsService.createTeamCard(
                 TeamCard.builder()
                         .status(TeamCardStatus.OK)

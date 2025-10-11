@@ -219,7 +219,7 @@ class StreamRestControllerTest extends BaseApplicationTest {
     }
 
     @Test
-    void addImage_largeFileSize() throws Exception{
+    void addImage_largeFileSize() throws Exception {
         var uuid = streamRepository.findAll().getFirst().getId();
         mockMvc.perform(multipart("/api/v1/streams/%s/image".formatted(uuid))
                         .file("file", new byte[100*1024*1024 + 1])
