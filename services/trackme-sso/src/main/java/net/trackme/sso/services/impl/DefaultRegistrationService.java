@@ -38,9 +38,9 @@ public class DefaultRegistrationService implements RegistrationService {
 
   @Override
   public void register(RegistrationRequestDto requestDto) {
-    if (userService.existByEmail(requestDto.email())) {
-      throw InformationException.builder("$account.already.exist").build();
-    }
+      if (userService.existsByEmailOrUsername(requestDto.email(), requestDto.username())) {
+        throw InformationException.builder("$account.already.exist").build();
+      }
 
     RegistrationToken registrationToken = tokenStore.generateToken();
     var tokenHash = registrationToken.tokenHash();

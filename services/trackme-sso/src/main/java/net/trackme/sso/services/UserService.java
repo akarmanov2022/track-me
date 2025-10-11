@@ -7,8 +7,6 @@ import net.trackme.sso.dto.UserDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.UUID;
-
 public interface UserService {
 
   /**
@@ -18,25 +16,7 @@ public interface UserService {
    */
   UserEntity saveUser(RegistrationRequestDto userDto);
 
-  /**
-   * Активация пользователя
-   *
-   * @param username   уникальный идентификатор пользователя
-   * @param password пароль пользователя
-   */
-  UserEntity firstActivation(UUID username, String password);
-
-  /**
-   * Создать пользователя и сразу активировать
-   */
-  UserEntity saveAndActivateUser(RegistrationRequestDto userDto);
-
-  /**
-   * Проверить существует ли пользователь с указанным email
-   */
-  boolean existByEmail(String email);
-
-  void save(UserEntity userEntity);
+    void save(UserEntity userEntity);
 
   void changePassword(String username, String newPassword, String oldPassword);
 
@@ -51,4 +31,6 @@ public interface UserService {
   Page<UserDto> getTrackers(FilterRequest filterRequest, Pageable pageable);
 
   Page<UserDto> getAdmins(FilterRequest filterRequest, Pageable pageable);
+
+    boolean existsByEmailOrUsername(String email, String username);
 }
