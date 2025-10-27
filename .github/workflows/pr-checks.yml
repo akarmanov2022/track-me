@@ -72,6 +72,12 @@ jobs:
               - 'build.gradle'
               - 'settings.gradle'
               - 'gradle/**'
+            telegram-service:
+              - 'services/telegram-service/**'
+              - 'libs/commons/**'
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle/**'
 
   backend-check:
     runs-on: ubuntu-latest
@@ -368,7 +374,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           pwd; ls -l .
-          ./gradlew :meeting-service:check :telegram-service:sonar \
+          ./gradlew :telegram-service:check :telegram-service:sonar \
             -Dsonar.projectKey=track-me-telegram-service \
             -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} \
