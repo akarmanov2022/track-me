@@ -2,7 +2,6 @@ package net.trackme.telegramservice.configuration;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.trackme.telegramservice.services.ChatService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -16,8 +15,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @AllArgsConstructor
 @EnableConfigurationProperties(AppProperties.class)
 public class NotificationBot extends TelegramLongPollingBot {
-
-    private final ChatService chatService;
 
     private final AppProperties appProperties;
 
@@ -35,23 +32,21 @@ public class NotificationBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if(update.hasMessage() && update.getMessage().hasText()){
             String message = update.getMessage().getText();
-            String username = update.getMessage().getChat().getUserName();
             Long chatId = update.getMessage().getChatId();
             Integer messageId = update.getMessage().getMessageId();
 
             deleteMessage(chatId, messageId);
-            handleMessage(chatId, username, message);
+            handleMessage(chatId, message);
         }
     }
 
-    public void handleMessage(Long chatId, String username, String message){
+    public void handleMessage(Long chatId, String message){
         if (message.startsWith("/start")){
             String reply = """
                            Вас приветсвует бот оповещений TrackMe.
                            Я буду присылать вам сообщения о рейтинге вашей команды.
                            """;
             sendMessage(chatId, reply);
-            chatService.createChat(chatId, username);
         }
     }
 
