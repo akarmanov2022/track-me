@@ -37,10 +37,6 @@ spring:
       ack-mode: record
       poll-timeout: 3000
       auto-startup: true
-app:
-  telegram-bot-properties:
-    bot-username: TrackMeAkcBot
-    bot-token: 7581239608:AAH6-rzLaejtX9JsEWruXU5spFBPBu4QGjQ
 
 ---
 spring:
