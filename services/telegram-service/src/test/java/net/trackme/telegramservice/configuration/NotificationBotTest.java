@@ -1,8 +1,11 @@
 package net.trackme.telegramservice.configuration;
 
+import net.trackme.telegramservice.AbstractIntegrationTest;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
@@ -13,8 +16,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@SpringBootTest
 @ExtendWith(MockitoExtension.class)
-class NotificationBotTest {
+@ActiveProfiles("test")
+class NotificationBotTest extends AbstractIntegrationTest {
 
     @Test
     void onUpdateReceived_success() throws Exception {

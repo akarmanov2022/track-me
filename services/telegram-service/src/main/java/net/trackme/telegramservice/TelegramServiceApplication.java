@@ -1,6 +1,7 @@
 package net.trackme.telegramservice;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.trackme.telegramservice.configuration.NotificationBot;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -10,6 +11,7 @@ import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
+@Slf4j
 @AllArgsConstructor
 @SpringBootApplication
 public class TelegramServiceApplication {
@@ -26,7 +28,7 @@ public class TelegramServiceApplication {
             try {
                 telegramBotsApi.registerBot(notificationBot);
             } catch (TelegramApiRequestException e) {
-                System.out.println("Telegram bot API could not register notification bot.");
+                log.error("Telegram bot API could not register notification bot.");
             }
         };
     }
