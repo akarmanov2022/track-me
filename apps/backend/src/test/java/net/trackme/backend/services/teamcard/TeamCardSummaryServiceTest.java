@@ -5,14 +5,16 @@ import net.trackme.backend.domain.ReadinessLevel;
 import net.trackme.backend.domain.Stream;
 import net.trackme.backend.domain.TeamCard;
 import net.trackme.backend.models.TeamCardStatus;
-import net.trackme.backend.repos.StreamRepository;
 import net.trackme.backend.repos.TeamCardsRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.Message;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -25,32 +27,41 @@ class TeamCardSummaryServiceTest extends BaseApplicationTest {
     private TeamCardsRepository teamCardsRepository;
 
     @Autowired
-    private StreamRepository streamRepository;
-
-    @Autowired
     private TeamCardSummaryService teamCardSummaryService;
 
     @MockitoBean
     private KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Test
-    void sendTeamCardsSummary_success() {
-        // Arrange
-        var stream = streamRepository.save(Stream.builder()
-                .name("stream 2")
+    protected TeamCard teamCard;
+
+    @BeforeEach
+    void initUser() {
+        stream = streamRepository.save(Stream.builder()
+                .name("stream 1")
                 .startDate(LocalDate.now().minusDays(1))
                 .endDate(LocalDate.now().plusDays(1))
                 .build());
 
-        TeamCard teamCard = teamCardsRepository.save(TeamCard.builder()
+        teamCard = teamCardsRepository.save(TeamCard.builder()
                 .name("test team card")
                 .enabled(true)
                 .username("tracker")
                 .readinessLevel(ReadinessLevel.LEVEL_2)
                 .streams(Set.of(stream))
-                .status(TeamCardStatus.OK)
+                .status(TeamCardStatus.MANY_ISSUES)
+                .averageGrade(BigDecimal.ZERO)
                 .build());
+    }
 
+    @AfterEach
+    void deleteUser() {
+        streamRepository.deleteAllInBatch();
+        teamCardsRepository.deleteAllInBatch();
+    }
+
+    @Test
+    void sendTeamCardsSummary_success() {
+        // Arrange
         LinkedHashMap<String, String> meetingSummaryEvent =
                 new LinkedHashMap<>(){{
                     put("teamCardId", String.valueOf(teamCard.getId()));
@@ -65,6 +76,15 @@ class TeamCardSummaryServiceTest extends BaseApplicationTest {
 
         // Act
         teamCardSummaryService.sendTeamCardsSummary(teamCardSummaryEvents);
+
+        // Assert
+        verify(kafkaTemplate).send(any(Message.class));
+    }
+
+    @Test
+    void reportAboutTeamCardLowGrades_success() {
+        // Act
+        teamCardSummaryService.reportAboutTeamCardLowGrades();
 
         // Assert
         verify(kafkaTemplate).send(any(Message.class));

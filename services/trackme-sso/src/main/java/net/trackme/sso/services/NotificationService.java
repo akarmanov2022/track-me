@@ -10,4 +10,6 @@ public interface NotificationService {
                                             String meetingLink);
 
     void sendTeamCardSummary(List<LinkedHashMap<String, String>> teamCardSummaryEvents);
+
+    void sendTeamCardLowGradeSummary(List<LinkedHashMap<String, String>> teamCardSummaryEvents);
 }

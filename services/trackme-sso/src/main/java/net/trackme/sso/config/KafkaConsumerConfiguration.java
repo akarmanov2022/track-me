@@ -67,4 +67,29 @@ public class KafkaConsumerConfiguration {
         factory.setConsumerFactory(teamCardSummaryEventConsumerFactory);
         return factory;
     }
+
+    @Bean
+    ConsumerFactory<String, List<LinkedHashMap<String, String>>> teamCardLowGradeSummaryEventConsumerFactory(
+            KafkaProperties kafkaProperties) {
+        var props = kafkaProperties.buildConsumerProperties(null);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "net.trackme.services.trackme-sso.messaging");
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, List.class);
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        return new DefaultKafkaConsumerFactory<>(
+                props,
+                new StringDeserializer(),
+                new JsonDeserializer<>(List.class, false)
+        );
+    }
+
+    @Bean
+    ConcurrentKafkaListenerContainerFactory<String, List<LinkedHashMap<String, String>>> teamCardLowGradeSummaryListenerContainerFactory(
+            ConsumerFactory<String, List<LinkedHashMap<String, String>>> teamCardLowGradeSummaryEventConsumerFactory
+    ) {
+        var factory = new ConcurrentKafkaListenerContainerFactory<String, List<LinkedHashMap<String, String>>>();
+        factory.setConsumerFactory(teamCardLowGradeSummaryEventConsumerFactory);
+        return factory;
+    }
 }

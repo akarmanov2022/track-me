@@ -41,4 +41,14 @@ public class TeamCardEventsListener {
         log.info("Received team card summary event: {}", teamCardSummaryEvents);
         notificationService.sendTeamCardSummary(teamCardSummaryEvents);
     }
+
+    @KafkaListener(
+            topics = "team-card-low-grade-summary",
+            containerFactory = "teamCardLowGradeSummaryListenerContainerFactory")
+    public void onTeamCardLowGradeSummaryEvent(
+            ConsumerRecord<String, List<LinkedHashMap<String, String>>> record) {
+        var teamCardLowGradeSummaryEvents = record.value();
+        log.info("Received team card low grade summary event: {}", teamCardLowGradeSummaryEvents);
+        notificationService.sendTeamCardLowGradeSummary(teamCardLowGradeSummaryEvents);
+    }
 }

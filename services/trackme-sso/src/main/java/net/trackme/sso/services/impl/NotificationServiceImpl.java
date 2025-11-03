@@ -60,8 +60,8 @@ public class NotificationServiceImpl implements NotificationService {
         for (var teamCardSummaryEvent : teamCardSummaryEvents) {
             var info = String.format("%d. Поток: %s - Команда: %s - Встреча: %s<br>Ссылка на встречу: %s",
                     count,
-                    teamCardSummaryEvent.get("teamCardName"),
                     teamCardSummaryEvent.get("streamName"),
+                    teamCardSummaryEvent.get("teamCardName"),
                     teamCardSummaryEvent.get("meetingNumber"),
                     teamCardSummaryEvent.get("meetingLink"));
             count++;
@@ -84,6 +84,46 @@ public class NotificationServiceImpl implements NotificationService {
                     appProperties.getMail().getFrom(),
                     "[" + appProperties.getMail().getSubject() + "] Сводка по пропущенным встречам",
                     "email-not-happened-meetings-summary.html",
+                    Map.of(
+                            "email", emailTo,
+                            "appName", appProperties.getMail().getSubject(),
+                            "supportEmail", appProperties.getMail().getFrom(),
+                            "summary", summary));
+        }
+    }
+
+    @Override
+    public void sendTeamCardLowGradeSummary(
+            List<LinkedHashMap<String, String>> teamCardLowGradeSummaryEvents){
+        String summary;
+        int count = 1;
+        List<String> infos = new ArrayList<>();
+        for (var teamCardSummaryEvent : teamCardLowGradeSummaryEvents) {
+            var info = String.format("%d. Поток: %s - Команда: %s - Рейтинг: %s",
+                    count,
+                    teamCardSummaryEvent.get("streamName"),
+                    teamCardSummaryEvent.get("teamCardName"),
+                    teamCardSummaryEvent.get("averageGrade"));
+            count++;
+            infos.add(info);
+        }
+
+        summary = String.join("<br><br>", infos);
+
+        var emailTos = userRepository.findAll(byRole("ADMIN"))
+                .stream()
+                .map(UserEntity::getEmail)
+                .toList();
+
+        if (emailTos.isEmpty())
+            return;
+
+        for (var emailTo : emailTos) {
+            emailService.sendMail(
+                    emailTo,
+                    appProperties.getMail().getFrom(),
+                    "[" + appProperties.getMail().getSubject() + "] Сводка по командам с низким рейтингом",
+                    "email-team-card-low-grade-summary.html",
                     Map.of(
                             "email", emailTo,
                             "appName", appProperties.getMail().getSubject(),

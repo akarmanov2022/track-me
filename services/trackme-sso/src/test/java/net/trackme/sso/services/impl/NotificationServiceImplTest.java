@@ -115,4 +115,29 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
         // Assert
         verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
+
+    @Test
+    void sendTeamCardLowGradeSummary_success() {
+        // Arrange
+        LinkedHashMap<String, String> teamCardLowGradeSummaryEvent = new LinkedHashMap<>();
+
+        List<LinkedHashMap<String, String>> teamCardLowGradeSummaryEvents =
+                new ArrayList<>(){{
+                    add(teamCardLowGradeSummaryEvent);
+                }};
+
+        MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
+        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationService notificationService = new NotificationServiceImpl(
+                userRepository,
+                appProperties,
+                emailService);
+
+        // Act
+        notificationService.sendTeamCardLowGradeSummary(teamCardLowGradeSummaryEvents);
+
+        // Assert
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
+    }
 }
