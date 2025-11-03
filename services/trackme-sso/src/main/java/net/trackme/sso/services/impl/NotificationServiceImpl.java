@@ -9,7 +9,12 @@ import net.trackme.sso.services.EmailService;
 import net.trackme.sso.services.NotificationService;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+
+import static net.trackme.sso.dao.UserSpecification.byRole;
 
 @Slf4j
 @Service
@@ -44,5 +49,46 @@ public class NotificationServiceImpl implements NotificationService {
                         "teamCardName", teamCardName,
                         "streamName", streamName,
                         "meetingLink", meetingLink));
+    }
+
+    @Override
+    public void sendTeamCardSummary(
+            List<LinkedHashMap<String, String>> teamCardSummaryEvents){
+        String summary;
+        int count = 1;
+        List<String> infos = new ArrayList<>();
+        for (var teamCardSummaryEvent : teamCardSummaryEvents) {
+            var info = String.format("%d. Поток: %s - Команда: %s - Встреча: %s<br>Ссылка на встречу: %s",
+                    count,
+                    teamCardSummaryEvent.get("teamCardName"),
+                    teamCardSummaryEvent.get("streamName"),
+                    teamCardSummaryEvent.get("meetingNumber"),
+                    teamCardSummaryEvent.get("meetingLink"));
+            count++;
+            infos.add(info);
+        }
+
+        summary = String.join("<br><br>", infos);
+
+        var emailTos = userRepository.findAll(byRole("ADMIN"))
+                .stream()
+                .map(UserEntity::getEmail)
+                .toList();
+
+        if (emailTos.isEmpty())
+            return;
+
+        for (var emailTo : emailTos) {
+            emailService.sendMail(
+                    emailTo,
+                    appProperties.getMail().getFrom(),
+                    "[" + appProperties.getMail().getSubject() + "] Сводка по пропущенным встречам",
+                    "email-not-happened-meetings-summary.html",
+                    Map.of(
+                            "email", emailTo,
+                            "appName", appProperties.getMail().getSubject(),
+                            "supportEmail", appProperties.getMail().getFrom(),
+                            "summary", summary));
+        }
     }
 }

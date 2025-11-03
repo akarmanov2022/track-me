@@ -15,6 +15,9 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -86,5 +89,30 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
                         teamCardName,
                         streamName,
                         meetingLink));
+    }
+
+    @Test
+    void sendTeamCardSummary_success() {
+        // Arrange
+        LinkedHashMap<String, String> teamCardSummaryEvent = new LinkedHashMap<>();
+
+        List<LinkedHashMap<String, String>> teamCardSummaryEvents =
+                new ArrayList<>(){{
+                    add(teamCardSummaryEvent);
+        }};
+
+        MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
+        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationService notificationService = new NotificationServiceImpl(
+                userRepository,
+                appProperties,
+                emailService);
+
+        // Act
+        notificationService.sendTeamCardSummary(teamCardSummaryEvents);
+
+        // Assert
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
 }

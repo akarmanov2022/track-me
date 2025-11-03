@@ -10,6 +10,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,7 +21,10 @@ import static org.mockito.Mockito.when;
 class TeamCardEventsListenerTest extends AbstractIntegrationTest {
 
     @Mock
-    private ConsumerRecord<String, MeetingNotHappenedEvent> record;
+    private ConsumerRecord<String, MeetingNotHappenedEvent> meetingNotHappenedRecord;
+
+    @Mock
+    private ConsumerRecord<String, List<LinkedHashMap<String, String>>> teamCardSummaryRecord;
 
     @Autowired
     private TeamCardEventsListener teamCardEventsListener;
@@ -38,10 +45,10 @@ class TeamCardEventsListenerTest extends AbstractIntegrationTest {
                 streamName,
                 meetingLink
         );
-        when(record.value()).thenReturn(event);
+        when(meetingNotHappenedRecord.value()).thenReturn(event);
 
         // Act
-        teamCardEventsListener.onMeetingNotHappenedEvent(record);
+        teamCardEventsListener.onMeetingNotHappenedEvent(meetingNotHappenedRecord);
 
         // Assert
         verify(notificationService).sendMeetingNotHappenedNotification(
@@ -49,5 +56,18 @@ class TeamCardEventsListenerTest extends AbstractIntegrationTest {
                 teamCardName,
                 streamName,
                 meetingLink);
+    }
+
+    @Test
+    void onTeamCardSummaryEvent() {
+        // Arrange
+        List<LinkedHashMap<String, String>> event = new ArrayList<>();
+        when(teamCardSummaryRecord.value()).thenReturn(event);
+
+        // Act
+        teamCardEventsListener.onTeamCardSummaryEvent(teamCardSummaryRecord);
+
+        // Assert
+        verify(notificationService).sendTeamCardSummary(event);
     }
 }
