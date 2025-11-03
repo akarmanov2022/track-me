@@ -24,15 +24,11 @@ class NotificationBotTest extends AbstractIntegrationTest {
     @Test
     void onUpdateReceived_success() throws Exception {
         // Arrange
-        String testText = """
-                          Вас приветсвует бот оповещений TrackMe.
-                          Я буду присылать вам сообщения о рейтинге вашей команды.
-                          """;
         Update update = createUpdate(1L, 1, "/start");
         AppProperties appProperties = createAppProperties("test-token", "test-username");
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(1L);
-        sendMessage.setText(testText);
+        sendMessage.setText(MessageTemplates.startMessageTemplate);
 
         DeleteMessage deleteMessage = new DeleteMessage();
         deleteMessage.setChatId(1L);

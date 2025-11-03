@@ -41,13 +41,8 @@ public class NotificationBot extends TelegramLongPollingBot {
     }
 
     public void handleMessage(Long chatId, String message){
-        if (message.startsWith("/start")){
-            String reply = """
-                           Вас приветсвует бот оповещений TrackMe.
-                           Я буду присылать вам сообщения о рейтинге вашей команды.
-                           """;
-            sendMessage(chatId, reply);
-        }
+        if (message.startsWith("/start"))
+            sendMessage(chatId, MessageTemplates.startMessageTemplate);
     }
 
     public void sendMessage(Long chatId, String text){
