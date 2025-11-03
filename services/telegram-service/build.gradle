@@ -16,7 +16,6 @@ dependencies {
     implementation 'org.liquibase:liquibase-core'
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.telegram:telegrambots-spring-boot-starter'
-    implementation 'org.telegram:telegrambots-abilities'
 
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
