@@ -1,4 +1,4 @@
-package net.trackme.meetingservice.configuration;
+package net.trackme.backend.configuration;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
@@ -8,13 +8,13 @@ import java.util.Map;
 
 @Configuration
 public class KafkaTopicsConfiguration {
-    public static final String MEETING_CREATED_TOPIC = "meeting-created";
-    public static final String MEETING_UPDATED_TOPIC = "meeting-updated";
-    public static final String MEETINGS_SUMMARY_TOPIC = "meeting-summary";
+    public static final String MEETING_NOT_HAPPENED_TOPIC = "meeting-not-happened";
+    public static final String TEAM_CARD_SUMMARY_TOPIC = "team-card-summary";
+    public static final String TEAM_CARD_LOW_GRADE_SUMMARY_TOPIC = "team-card-low-grade-summary";
 
     @Bean
-    NewTopic meetingCreatedTopic() {
-        return new NewTopic(MEETING_CREATED_TOPIC, 3, (short) 1)
+    NewTopic meetingNotHappenedTopic() {
+        return new NewTopic(MEETING_NOT_HAPPENED_TOPIC, 3, (short) 1)
                 .configs(Map.of(
                         // Пример настроек: хранить 7 дней
                         "retention.ms", String.valueOf(7L * 24 * 60 * 60 * 1000),
@@ -23,8 +23,8 @@ public class KafkaTopicsConfiguration {
     }
 
     @Bean
-    NewTopic meetingUpdatedTopic() {
-        return new NewTopic(MEETING_UPDATED_TOPIC, 3, (short) 1)
+    NewTopic teamCardSummaryTopic() {
+        return new NewTopic(TEAM_CARD_SUMMARY_TOPIC, 3, (short) 1)
                 .configs(Map.of(
                         // Пример настроек: хранить 7 дней
                         "retention.ms", String.valueOf(7L * 24 * 60 * 60 * 1000),
@@ -33,8 +33,8 @@ public class KafkaTopicsConfiguration {
     }
 
     @Bean
-    NewTopic meetingsSummaryTopic() {
-        return new NewTopic(MEETINGS_SUMMARY_TOPIC, 3, (short) 1)
+    NewTopic teamCardLowGradeSummaryTopic() {
+        return new NewTopic(TEAM_CARD_LOW_GRADE_SUMMARY_TOPIC, 3, (short) 1)
                 .configs(Map.of(
                         // Пример настроек: хранить 7 дней
                         "retention.ms", String.valueOf(7L * 24 * 60 * 60 * 1000),
