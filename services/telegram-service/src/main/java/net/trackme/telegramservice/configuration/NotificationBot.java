@@ -30,7 +30,7 @@ public class NotificationBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if(update.hasMessage() && update.getMessage().hasText()){
+        if (update.hasMessage() && update.getMessage().hasText()) {
             String message = update.getMessage().getText();
             Long chatId = update.getMessage().getChatId();
             Integer messageId = update.getMessage().getMessageId();
@@ -40,12 +40,13 @@ public class NotificationBot extends TelegramLongPollingBot {
         }
     }
 
-    public void handleMessage(Long chatId, String message){
-        if (message.startsWith("/start"))
-            sendMessage(chatId, MessageTemplates.startMessageTemplate);
+    private void handleMessage(Long chatId, String message) {
+        if (message.startsWith("/start")) {
+            sendMessage(chatId, MessageTemplates.START_MESSAGE_TEMPLATE);
+        }
     }
 
-    public void sendMessage(Long chatId, String text){
+    public void sendMessage(Long chatId, String text) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText(text);
@@ -57,7 +58,7 @@ public class NotificationBot extends TelegramLongPollingBot {
         }
     }
 
-    private void deleteMessage(Long chatId, Integer messageId){
+    private void deleteMessage(Long chatId, Integer messageId) {
         DeleteMessage message = new DeleteMessage();
         message.setChatId(chatId);
         message.setMessageId(messageId);

@@ -21,16 +21,15 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendMeetingNotHappenedMessage(String teamCardUsername,
                                               String teamCardName,
                                               String streamName,
-                                              String meetingLink)
-    {
+                                              String meetingLink) {
         ChatEntity chat = chatRepository.findByUsername(teamCardUsername);
 
-        if (chat == null){
+        if (chat == null) {
             log.warn("Chat with user {} not found", teamCardUsername);
             return;
         }
 
-        var message = MessageTemplates.meetingNotHappenedMessageTemplate
+        var message = MessageTemplates.MEETING_NOT_HAPPENED_MESSAGE_TEMPLATE
                 .replace("{teamCardName}", teamCardName)
                 .replace("{streamName}", streamName)
                 .replace("{meetingLink}", meetingLink);

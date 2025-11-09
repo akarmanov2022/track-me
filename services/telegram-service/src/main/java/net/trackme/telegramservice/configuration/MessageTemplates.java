@@ -1,12 +1,12 @@
 package net.trackme.telegramservice.configuration;
 
 public class MessageTemplates {
-    public static String startMessageTemplate = """
+    public static String START_MESSAGE_TEMPLATE = """
                                   Вас приветствует бот оповещений TrackMe.
                                   Я буду присылать вам оповещения о пропущенных встречах.
                                   """;
 
-    public static String meetingNotHappenedMessageTemplate = """
+    public static String MEETING_NOT_HAPPENED_MESSAGE_TEMPLATE = """
                                                Назначенная встреча не состоялась!
             
                                                Ваша команда {teamCardName} с потока {streamName} пропустила назначенную встречу.

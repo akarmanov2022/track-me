@@ -39,7 +39,7 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
 
         chatService.createChat(chatId, teamCardUsername);
 
-        var message = MessageTemplates.meetingNotHappenedMessageTemplate
+        var message = MessageTemplates.MEETING_NOT_HAPPENED_MESSAGE_TEMPLATE
                 .replace("{teamCardName}", teamCardName)
                 .replace("{streamName}", streamName)
                 .replace("{meetingLink}", meetingLink);
