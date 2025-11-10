@@ -31,8 +31,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendMeetingNotHappenedNotification(String teamCardUsername,
                                                    String teamCardName,
                                                    String streamName,
-                                                   String meetingLink)
-    {
+                                                   String meetingLink) {
         var emailTo = userRepository.findByUsername(teamCardUsername)
                 .map(UserEntity::getEmail)
                 .orElseThrow();
@@ -53,7 +52,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendTeamCardSummary(
-            List<LinkedHashMap<String, String>> teamCardSummaryEvents){
+            List<LinkedHashMap<String, String>> teamCardSummaryEvents) {
         String summary;
         int count = 1;
         List<String> infos = new ArrayList<>();
@@ -70,14 +69,14 @@ public class NotificationServiceImpl implements NotificationService {
 
         summary = String.join("<br><br>", infos);
 
-        var emailTos = userRepository.findAll(byRole("ADMIN"))
+        var emailTos = userRepository.findAll(byRole("ADMIN").or(byRole("SUPER_ADMIN")))
                 .stream()
                 .map(UserEntity::getEmail)
                 .toList();
 
-        if (emailTos.isEmpty())
+        if (emailTos.isEmpty()) {
             return;
-
+        }
         for (var emailTo : emailTos) {
             emailService.sendMail(
                     emailTo,
@@ -94,7 +93,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendTeamCardLowGradeSummary(
-            List<LinkedHashMap<String, String>> teamCardLowGradeSummaryEvents){
+            List<LinkedHashMap<String, String>> teamCardLowGradeSummaryEvents) {
         String summary;
         int count = 1;
         List<String> infos = new ArrayList<>();
@@ -110,14 +109,14 @@ public class NotificationServiceImpl implements NotificationService {
 
         summary = String.join("<br><br>", infos);
 
-        var emailTos = userRepository.findAll(byRole("ADMIN"))
+        var emailTos = userRepository.findAll(byRole("ADMIN").or(byRole("SUPER_ADMIN")))
                 .stream()
                 .map(UserEntity::getEmail)
                 .toList();
 
-        if (emailTos.isEmpty())
+        if (emailTos.isEmpty()) {
             return;
-
+        }
         for (var emailTo : emailTos) {
             emailService.sendMail(
                     emailTo,
