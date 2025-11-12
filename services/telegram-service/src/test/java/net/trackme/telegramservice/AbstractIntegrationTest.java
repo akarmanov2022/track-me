@@ -7,7 +7,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.kafka.KafkaContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -24,8 +26,15 @@ public abstract class AbstractIntegrationTest {
                     .withPassword("test")
                     .withInitScript("init-test-schema.sql");
 
+    private static final KafkaContainer KAFKA_CONTAINER =
+            new KafkaContainer("apache/kafka:latest")
+                    .withReuse(true)
+                    .waitingFor(Wait.forListeningPort())
+                    .withExposedPorts(9092);
+
     static {
         POSTGRESQL_CONTAINER.start();
+        KAFKA_CONTAINER.start();
     }
 
 
@@ -39,5 +48,6 @@ public abstract class AbstractIntegrationTest {
     @Test
     void contextLoads() {
         assertThat(POSTGRESQL_CONTAINER.isRunning()).isTrue();
+        assertThat(KAFKA_CONTAINER.isRunning()).isTrue();
     }
 }
