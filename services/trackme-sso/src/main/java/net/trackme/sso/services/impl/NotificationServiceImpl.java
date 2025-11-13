@@ -14,8 +14,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static net.trackme.sso.dao.UserSpecification.byRole;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -53,7 +51,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void sendTeamCardSummary(
             List<LinkedHashMap<String, String>> teamCardSummaryEvents) {
-        String summary;
         int count = 1;
         List<String> infos = new ArrayList<>();
         for (var teamCardSummaryEvent : teamCardSummaryEvents) {
@@ -67,34 +64,17 @@ public class NotificationServiceImpl implements NotificationService {
             infos.add(info);
         }
 
-        summary = String.join("<br><br>", infos);
+        String summary = String.join("<br><br>", infos);
 
-        var emailTos = userRepository.findAll(byRole("ADMIN").or(byRole("SUPER_ADMIN")))
-                .stream()
-                .map(UserEntity::getEmail)
-                .toList();
-
-        if (emailTos.isEmpty()) {
-            return;
-        }
-        for (var emailTo : emailTos) {
-            emailService.sendMail(
-                    emailTo,
-                    appProperties.getMail().getFrom(),
-                    "[" + appProperties.getMail().getSubject() + "] Сводка по пропущенным встречам",
-                    "email-not-happened-meetings-summary.html",
-                    Map.of(
-                            "email", emailTo,
-                            "appName", appProperties.getMail().getSubject(),
-                            "supportEmail", appProperties.getMail().getFrom(),
-                            "summary", summary));
-        }
+        sendMessageToAnyEmails(
+                "[" + appProperties.getMail().getSubject() + "] Сводка по пропущенным встречам",
+                "email-not-happened-meetings-summary.html",
+                summary);
     }
 
     @Override
     public void sendTeamCardLowGradeSummary(
             List<LinkedHashMap<String, String>> teamCardLowGradeSummaryEvents) {
-        String summary;
         int count = 1;
         List<String> infos = new ArrayList<>();
         for (var teamCardSummaryEvent : teamCardLowGradeSummaryEvents) {
@@ -107,12 +87,27 @@ public class NotificationServiceImpl implements NotificationService {
             infos.add(info);
         }
 
-        summary = String.join("<br><br>", infos);
+        String summary = String.join("<br><br>", infos);
 
-        var emailTos = userRepository.findAll(byRole("ADMIN").or(byRole("SUPER_ADMIN")))
+        sendMessageToAnyEmails(
+                "[" + appProperties.getMail().getSubject() + "] Сводка по командам с низким рейтингом",
+                "email-team-card-low-grade-summary.html",
+                summary);
+    }
+
+    private void sendMessageToAnyEmails(String subject, String templateName, String summary) {
+        var emailTos = userRepository.findAll()
                 .stream()
+                .filter(userEntity -> userEntity
+                        .getRoles()
+                        .stream()
+                        .anyMatch(roleEntity -> appProperties
+                                .getMail()
+                                 .getSummarySendRoles()
+                                .contains(roleEntity.getCode())))
                 .map(UserEntity::getEmail)
                 .toList();
+
 
         if (emailTos.isEmpty()) {
             return;
@@ -121,8 +116,8 @@ public class NotificationServiceImpl implements NotificationService {
             emailService.sendMail(
                     emailTo,
                     appProperties.getMail().getFrom(),
-                    "[" + appProperties.getMail().getSubject() + "] Сводка по командам с низким рейтингом",
-                    "email-team-card-low-grade-summary.html",
+                    subject,
+                    templateName,
                     Map.of(
                             "email", emailTo,
                             "appName", appProperties.getMail().getSubject(),

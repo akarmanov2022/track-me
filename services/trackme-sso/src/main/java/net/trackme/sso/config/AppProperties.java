@@ -6,6 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.List;
+
 @Data
 @Validated
 @ConfigurationProperties(prefix = "app")
@@ -54,5 +56,7 @@ public class AppProperties {
 
     @NotBlank(message = "Mail subject cannot be blank")
     private String subject;
+
+    private List<String> summarySendRoles;
   }
 }
