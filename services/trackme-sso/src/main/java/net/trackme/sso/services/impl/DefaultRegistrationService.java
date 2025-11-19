@@ -85,6 +85,9 @@ public class DefaultRegistrationService implements RegistrationService {
   }
 
   private String getNotificationBotLink() {
-    return String.format("https://t.me/%s?start_" + System.currentTimeMillis(), appProperties.getBotUsername());
+    var httpUrl = appProperties.getTelegramUrl() + "/{botUsername}";
+    return UriComponentsBuilder.fromUriString(httpUrl, UriComponentsBuilder.ParserType.WHAT_WG)
+            .queryParam("start", "{start}")
+            .build(appProperties.getBotUsername(), System.currentTimeMillis()).toString();
   }
 }
