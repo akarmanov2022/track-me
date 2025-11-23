@@ -111,7 +111,9 @@ public class MeetingStatusUpdateService {
                 .teamStatus(meeting.getTeamStatus())
                 .teamCardId(meeting.getTeamCardId())
                 .teamGrade(
-                        meeting.getTeamStatus() == null ? 0 : meeting.getTeamStatus().getValue()
+                        meeting.getTeamStatus() == null
+                                ? 0
+                                : meeting.getTeamStatus().getValue()
                 )
                 .meetingLink(getMeetingLink(meeting))
                 .build();
@@ -119,7 +121,7 @@ public class MeetingStatusUpdateService {
     }
 
     private String getMeetingLink(Meeting meeting) {
-        var httpUrl = appProperties.getAppUrl() + "/{meetingId}";
+        var httpUrl = appProperties.getAppUrl() + "/meeting/{meetingId}";
         return UriComponentsBuilder.fromUriString(httpUrl, UriComponentsBuilder.ParserType.WHAT_WG)
                 .queryParam("teamId", "{teamId}")
                 .build(meeting.getId(), meeting.getTeamCardId())

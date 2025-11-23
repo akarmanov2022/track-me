@@ -32,9 +32,12 @@ class MeetingStatusUpdateServiceIntegrationTest extends AbstractIntegrationTest 
         var pastDate = OffsetDateTime.now().minusHours(2);
 
         var expiredMeeting = new Meeting();
+        expiredMeeting.setLink("TestLink");
+        expiredMeeting.setNumber("TestNumber");
         expiredMeeting.setStartDate(pastDate);
         expiredMeeting.setTeamStatus(TeamStatus.MANY_ISSUES);
         expiredMeeting.setTeamCardId(UUID.randomUUID());
+        expiredMeeting.setTasksCurrentMeeting("TestTasksCurrentMeeting");
         expiredMeeting.setStatus(MeetingStatus.SCHEDULED);
 
         var expiredMeetingWithoutUnfilledFields = new Meeting();
