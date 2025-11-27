@@ -2,6 +2,7 @@ package net.trackme.meetingservice.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.trackme.meetingservice.configuration.AppProperties;
 import net.trackme.meetingservice.dao.MeetingRepository;
 import net.trackme.meetingservice.entities.Meeting;
 import net.trackme.meetingservice.entities.MeetingStatus;
@@ -9,6 +10,7 @@ import net.trackme.meetingservice.events.MeetingSummaryEvent;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ import java.util.List;
 public class MeetingSummaryService {
     private final MeetingRepository meetingRepository;
     private final MeetingEventsProducer meetingEventsProducer;
+    private final AppProperties appProperties;
 
     @Transactional
     @Scheduled(cron = "* 0 12 * * 7")
@@ -39,18 +42,26 @@ public class MeetingSummaryService {
         meetings.addAll(meetingRepository
                 .findByStatusAndStartDateAfter(MeetingStatus.COMPLETED_AS_NOT_HAPPENED, dateAfter));
 
-        if (meetings.isEmpty())
+        if (meetings.isEmpty()) {
             return;
-
+        }
         for (Meeting meeting : meetings) {
             var meetingSummaryEvent = MeetingSummaryEvent.builder()
                     .meetingNumber(meeting.getNumber())
-                    .meetingLink(meeting.getLink())
+                    .meetingLink(getMeetingLink(meeting))
                     .teamCardId(meeting.getTeamCardId())
                     .build();
             meetingSummaryEvents.add(meetingSummaryEvent);
         }
 
         meetingEventsProducer.sendMeetingSummaryEvents(meetingSummaryEvents);
+    }
+
+    private String getMeetingLink(Meeting meeting) {
+        var httpUrl = appProperties.getAppUrl() + "/meeting/{meetingId}";
+        return UriComponentsBuilder.fromUriString(httpUrl, UriComponentsBuilder.ParserType.WHAT_WG)
+                .queryParam("teamId", "{teamId}")
+                .build(meeting.getId(), meeting.getTeamCardId())
+                .toString();
     }
 }
