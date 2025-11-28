@@ -29,7 +29,7 @@ public class TeamCardSummaryService {
     private final TeamCardEventsProducer teamCardEventsProducer;
 
     @Transactional
-    @Scheduled(cron = "* 0 12 * * 7")
+    @Scheduled(cron = "0 2 5 * * 1")
     public void reportAboutTeamCardLowGrades() {
         log.info("Scheduled team card low grade summary started");
         sendTeamCardLowGradeSummary();

@@ -22,7 +22,7 @@ public class MeetingSummaryService {
     private final MeetingEventsProducer meetingEventsProducer;
 
     @Transactional
-    @Scheduled(cron = "* 0 12 * * 7")
+    @Scheduled(cron = "0 2 5 * * 1")
     public void reportAboutNotHappenedMeetings() {
         log.info("Scheduled not happened meetings summary started");
         var now = OffsetDateTime.now();

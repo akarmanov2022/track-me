@@ -27,7 +27,7 @@ public class MeetingStatusUpdateService {
     private final AppProperties appProperties;
 
     @Transactional
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "0 0 5 * * *")
     public void updateMeetingStatuses() {
         log.info("Starting scheduled meeting status update");
         var now = OffsetDateTime.now();
