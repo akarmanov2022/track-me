@@ -20,8 +20,19 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class MeetingSummaryService {
+    /**
+     * Репозиторий встреч.
+     */
     private final MeetingRepository meetingRepository;
+
+    /**
+     * Отправитель сообщений.
+     */
     private final MeetingEventsProducer meetingEventsProducer;
+
+    /**
+     * Настройки приложения.
+     */
     private final AppProperties appProperties;
 
     @Transactional

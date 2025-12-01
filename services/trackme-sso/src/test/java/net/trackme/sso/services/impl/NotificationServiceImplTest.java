@@ -39,6 +39,14 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
     @MockitoBean
     private JavaMailSender javaMailSender;
 
+    @BeforeEach
+    void setUpUsers()
+    {
+        var admin = userRepository.findByUsername("superadmin").stream().findFirst().orElseThrow();
+        admin.setEmail("superadmin@superadmin.ru");
+        userRepository.save(admin);
+    }
+
     @Test
     void sendMeetingNotHappenedNotification_success() {
         // Arrange

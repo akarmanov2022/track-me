@@ -12,7 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -24,6 +28,8 @@ public class TeamCardSummaryService {
     private final TeamCardsRepository teamCardsRepository;
 
     private final TeamCardEventsProducer teamCardEventsProducer;
+
+    private final double lowGrade = 0.25;
 
     @Transactional
     @Scheduled(cron = "* 0 12 * * 7")
@@ -67,7 +73,7 @@ public class TeamCardSummaryService {
 
         var teamCards = teamCardsRepository.findAll().stream()
                 .filter(teamCard -> teamCard.getAverageGrade()
-                        .compareTo(BigDecimal.valueOf(0.25)) <= 0)
+                        .compareTo(BigDecimal.valueOf(lowGrade)) <= 0)
                 .toList();
 
         if (teamCards.isEmpty()) {
