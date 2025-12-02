@@ -6,6 +6,7 @@ import net.trackme.sso.config.AppProperties;
 import net.trackme.sso.dao.repository.UserRepository;
 import net.trackme.sso.services.EmailService;
 import net.trackme.sso.services.NotificationService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
