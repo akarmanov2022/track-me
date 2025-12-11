@@ -6,6 +6,7 @@ import net.trackme.backend.mapping.TeamCardMapper;
 import net.trackme.backend.models.TeamCardStatus;
 import net.trackme.backend.rest.api.teamcard.dto.TeamCardCreateOrUpdateDto;
 import net.trackme.backend.rest.api.teamcard.dto.TeamCardDto;
+import net.trackme.backend.rest.api.teamcard.dto.TeamCardReportRecordDto;
 import net.trackme.backend.services.nti.NtiMarketService;
 import net.trackme.backend.services.stream.MutableStreamService;
 import net.trackme.backend.services.teamcard.TeamCardsService;
@@ -87,5 +88,11 @@ public class TeamCardsUseCase {
 
     public Integer getTeamCardCount(UUID streamId) {
         return teamCardsService.getTeamCardCount(streamId);
+    }
+
+    public Page<TeamCardReportRecordDto> getTeamCardReport(List<Filter> filters,
+                                                           Pageable pageable) {
+        var page = teamCardsService.getTeamCards(withFilters(filters), pageable);
+        return page.map(teamCardsService::mapToTeamCardReportRecordDto);
     }
 }

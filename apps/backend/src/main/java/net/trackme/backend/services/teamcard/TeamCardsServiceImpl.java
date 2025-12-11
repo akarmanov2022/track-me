@@ -3,9 +3,12 @@ package net.trackme.backend.services.teamcard;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.trackme.backend.domain.NTIMarket;
+import net.trackme.backend.domain.Stream;
 import net.trackme.backend.domain.TeamCard;
 import net.trackme.backend.models.TeamCardStatus;
 import net.trackme.backend.repos.TeamCardsRepository;
+import net.trackme.backend.rest.api.teamcard.dto.TeamCardReportRecordDto;
 import net.trackme.backend.services.exceptions.TeamCardNotFoundException;
 import net.trackme.backend.services.stream.StreamService;
 import net.trackme.commons.acl.AclService;
@@ -25,10 +28,19 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TeamCardsServiceImpl implements TeamCardsService {
 
+    /**
+     * Репозиторий карточек команд.
+     */
     private final TeamCardsRepository teamCardsRepository;
 
+    /**
+     * Сервис потоков.
+     */
     private final StreamService streamService;
 
+    /**
+     * Сервис ACL.
+     */
     private final AclService aclService;
 
     @Override
@@ -129,6 +141,29 @@ public class TeamCardsServiceImpl implements TeamCardsService {
     @Override
     public Integer getTeamCardCount(UUID streamId) {
         return teamCardsRepository.countByStreamsIdIn(Collections.singletonList(streamId));
+    }
+
+    @Override
+    public TeamCardReportRecordDto mapToTeamCardReportRecordDto(TeamCard teamCard) {
+        return teamCard.getStreams().stream()
+                .filter(Stream::isActive)
+                .findFirst()
+                .map(stream -> TeamCardReportRecordDto.builder()
+                        .streamName(stream.getName())
+                        .startDate(stream.getStartDate())
+                        .endDate(stream.getEndDate())
+                        .teamCardName(teamCard.getName())
+                        .username(teamCard.getUsername())
+                        .averageTeamGrade(teamCard.getAverageGrade())
+                        .meetingsCountPlan(teamCard.getMeetingsCount())
+                        .meetingsCountFact(teamCard.getMeetingsCompletedCount())
+                        .ntiMarkets(teamCard.getNtiMarkets()
+                                .stream()
+                                .map(NTIMarket::getName)
+                                .toList())
+                        .readinessLevel(teamCard.getReadinessLevel().getValue())
+                        .build())
+                .orElse(null);
     }
 
     private TeamCard get(UUID teamCardId) {

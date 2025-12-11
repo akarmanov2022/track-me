@@ -27,7 +27,10 @@ public class TeamCardSpecification implements Specification<TeamCard> {
             READINESS_LEVEL_FIELD_NAME,
             "streams.year",
             "streams.name",
-            "enabled"
+            "enabled",
+            "averageGrade",
+            "streams.startDate",
+            "streams.endDate"
     );
 
     private final transient List<Filter> filters;
