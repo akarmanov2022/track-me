@@ -3,7 +3,9 @@ package net.trackme.sso.controller;
 import jakarta.mail.internet.MimeMessage;
 import net.trackme.sso.AbstractIntegrationTest;
 import net.trackme.sso.components.impl.RedisRegistrationStore;
+import net.trackme.sso.dao.repository.UserRepository;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -36,6 +38,16 @@ class RegistrationControllerTest extends AbstractIntegrationTest {
     private JavaMailSender javaMailSender;
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    private UserRepository userRepository;
+
+    @BeforeEach
+    void setUpUsers()
+    {
+        var admin = userRepository.findByUsername("superadmin").stream().findFirst().orElseThrow();
+        admin.setEmail("superadmin@superadmin.ru");
+        userRepository.save(admin);
+    }
 
     @Test
     void testRegistration_success() throws Exception {
@@ -79,4 +91,47 @@ class RegistrationControllerTest extends AbstractIntegrationTest {
                 .hasSizeGreaterThanOrEqualTo(1);
     }
 
+    @Test
+    void testRecovery_success() throws Exception {
+        MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
+        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        Set<String> keysBefore = stringRedisTemplate.keys(RedisRegistrationStore.SESSION_ID_TO_REG_DATA + "*");
+
+        mockMvc.perform(post("/api/v1/registration/recovery-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "email": "superadmin@superadmin.ru"
+                                }
+                                """)
+                        .with(csrf()))
+                .andExpect(status().isOk());
+
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
+
+        Set<String> keysAfter = stringRedisTemplate.keys(RedisRegistrationStore.SESSION_ID_TO_REG_DATA + "*");
+        Assertions.assertThat(keysAfter)
+                .as("Ожидается появление хотя бы одной новой записи в Redis")
+                .isNotNull()
+                .isNotEmpty();
+
+        keysAfter.removeAll(keysBefore);
+        Assertions.assertThat(keysAfter)
+                .as("Ожидается, что появился новый ключ в Redis после регистрации")
+                .hasSizeGreaterThanOrEqualTo(1);
+    }
+
+    @Test
+    void testRecovery_emailNotFound() throws Exception {
+        mockMvc.perform(post("/api/v1/registration/recovery-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "email": "john@john.john"
+                                }
+                                """)
+                        .with(csrf()))
+                .andExpect(status().isInternalServerError());
+    }
 }
