@@ -2,6 +2,7 @@ package net.trackme.backend.usecases;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import net.trackme.backend.domain.Stream;
 import net.trackme.backend.mapping.TeamCardMapper;
 import net.trackme.backend.models.TeamCardStatus;
 import net.trackme.backend.rest.api.teamcard.dto.TeamCardCreateOrUpdateDto;
@@ -22,6 +23,7 @@ import java.util.UUID;
 
 import static net.trackme.backend.domain.spec.TeamCardSpecification.userEquals;
 import static net.trackme.backend.domain.spec.TeamCardSpecification.withFilters;
+import static net.trackme.backend.domain.spec.TeamCardSpecification.withStreamsAndNtiMarkets;
 
 @Component
 @RequiredArgsConstructor
@@ -92,7 +94,10 @@ public class TeamCardsUseCase {
 
     public Page<TeamCardReportRecordDto> getTeamCardReport(List<Filter> filters,
                                                            Pageable pageable) {
-        var page = teamCardsService.getTeamCards(withFilters(filters), pageable);
-        return page.map(teamCardsService::mapToTeamCardReportRecordDto);
+        var streams = streamService.findAllActive().stream().map(Stream::getName).toList();
+        var teamCardPage = teamCardsService.getTeamCards(
+                withFilters(filters).and(withStreamsAndNtiMarkets(streams)),
+                pageable);
+        return teamCardPage.map(teamCardMapper::mapToReportDto);
     }
 }

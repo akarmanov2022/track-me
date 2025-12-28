@@ -2,6 +2,7 @@ package net.trackme.backend.domain.spec;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import net.trackme.backend.domain.TeamCard;
@@ -42,6 +43,17 @@ public class TeamCardSpecification implements Specification<TeamCard> {
     public static Specification<TeamCard> userEquals(String username) {
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.equal(root.get("username"), username);
+    }
+
+    public static Specification<TeamCard> withStreamsAndNtiMarkets(List<String> streamNames) {
+        return (root, query, criteriaBuilder) -> {
+            if (query != null && Long.class != query.getResultType()) {
+                root.fetch("streams", JoinType.LEFT);
+                root.fetch("ntiMarkets", JoinType.LEFT);
+            }
+            var streamJoin = root.join("streams");
+            return streamJoin.get("name").in(streamNames);
+        };
     }
 
     public static TeamCardSpecification withFilters(List<Filter> filters) {

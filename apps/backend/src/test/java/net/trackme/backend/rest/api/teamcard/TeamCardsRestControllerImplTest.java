@@ -3,6 +3,7 @@ package net.trackme.backend.rest.api.teamcard;
 import net.trackme.backend.BaseApplicationTest;
 import net.trackme.backend.domain.NTIMarket;
 import net.trackme.backend.domain.ReadinessLevel;
+import net.trackme.backend.domain.Stream;
 import net.trackme.backend.domain.TeamCard;
 import net.trackme.backend.models.TeamCardStatus;
 import net.trackme.backend.repos.NtiMarketRepository;
@@ -784,25 +785,53 @@ class TeamCardsRestControllerImplTest extends BaseApplicationTest {
     @Test
     @WithMockUser(value = BaseApplicationTest.USER, roles = "ADMIN")
     void getTeamCardsReport_withoutFilters_success() throws Exception {
-        var stream = streamRepository.findAll().getFirst();
+        var stream1 = streamRepository.findAll().getFirst();
+        var stream2 = streamRepository.save(Stream.builder()
+                .name("stream 2")
+                .startDate(LocalDate.now().minusDays(1))
+                .endDate(LocalDate.now().plusDays(1))
+                .build());
+        var stream3 = streamRepository.save(Stream.builder()
+                .name("stream 3")
+                .startDate(LocalDate.now().minusDays(3))
+                .endDate(LocalDate.now().minusDays(2))
+                .build());
         var ntiMarket1 = ntiMarketRepository.findAll().get(0);
         var ntiMarket2 = ntiMarketRepository.findAll().get(1);
         teamCardsService.createTeamCard(TeamCard.builder()
                 .status(TeamCardStatus.OK)
-                .name("Team card1")
+                .name("Team card 1")
                 .ntiMarkets(List.of(ntiMarket1))
                 .username(BaseApplicationTest.USER)
                 .readinessLevel(ReadinessLevel.LEVEL_1)
-                .description("Team card1 description")
+                .description("Team card 1 description")
                 .build());
         teamCardsService.createTeamCard(TeamCard.builder()
                 .status(TeamCardStatus.OK)
-                .name("Team card2")
-                .streams(Set.of(stream))
+                .name("Team card 2")
+                .streams(Set.of(stream1))
                 .ntiMarkets(List.of(ntiMarket2))
                 .username(BaseApplicationTest.USER)
                 .readinessLevel(ReadinessLevel.LEVEL_2)
-                .description("Team card2 description")
+                .description("Team card 2 description")
+                .build());
+        teamCardsService.createTeamCard(TeamCard.builder()
+                .status(TeamCardStatus.OK)
+                .name("Team card 3")
+                .streams(Set.of(stream2))
+                .ntiMarkets(List.of(ntiMarket2))
+                .username(BaseApplicationTest.USER)
+                .readinessLevel(ReadinessLevel.LEVEL_2)
+                .description("Team card 3 description")
+                .build());
+        teamCardsService.createTeamCard(TeamCard.builder()
+                .status(TeamCardStatus.OK)
+                .name("Team card 4")
+                .streams(Set.of(stream3))
+                .ntiMarkets(List.of(ntiMarket2))
+                .username(BaseApplicationTest.USER)
+                .readinessLevel(ReadinessLevel.LEVEL_2)
+                .description("Team card 4 description")
                 .build());
 
         mockMvc.perform(post("/api/v1/team-cards/reports")
@@ -821,16 +850,53 @@ class TeamCardsRestControllerImplTest extends BaseApplicationTest {
     @Test
     @WithMockUser(value = BaseApplicationTest.USER, roles = "ADMIN")
     void getTeamCardsReport_withFilters_success() throws Exception {
-        var stream = streamRepository.findAll().getFirst();
-        var ntiMarket = ntiMarketRepository.findAll().getFirst();
-
+        var stream1 = streamRepository.findAll().getFirst();
+        var stream2 = streamRepository.save(Stream.builder()
+                .name("stream 2")
+                .startDate(LocalDate.now().minusDays(1))
+                .endDate(LocalDate.now().plusDays(1))
+                .build());
+        var stream3 = streamRepository.save(Stream.builder()
+                .name("stream 3")
+                .startDate(LocalDate.now().minusDays(3))
+                .endDate(LocalDate.now().minusDays(2))
+                .build());
+        var ntiMarket1 = ntiMarketRepository.findAll().get(0);
+        var ntiMarket2 = ntiMarketRepository.findAll().get(1);
         teamCardsService.createTeamCard(TeamCard.builder()
                 .status(TeamCardStatus.OK)
-                .name("Team card1")
-                .streams(Set.of(stream))
-                .ntiMarkets(List.of(ntiMarket))
+                .name("Team card 1")
+                .ntiMarkets(List.of(ntiMarket1))
                 .username(BaseApplicationTest.USER)
                 .readinessLevel(ReadinessLevel.LEVEL_1)
+                .description("Team card 1 description")
+                .build());
+        teamCardsService.createTeamCard(TeamCard.builder()
+                .status(TeamCardStatus.OK)
+                .name("Team card 2")
+                .streams(Set.of(stream1))
+                .ntiMarkets(List.of(ntiMarket2))
+                .username(BaseApplicationTest.USER)
+                .readinessLevel(ReadinessLevel.LEVEL_2)
+                .description("Team card 2 description")
+                .build());
+        teamCardsService.createTeamCard(TeamCard.builder()
+                .status(TeamCardStatus.OK)
+                .name("Team card 3")
+                .streams(Set.of(stream2))
+                .ntiMarkets(List.of(ntiMarket2))
+                .username(BaseApplicationTest.USER)
+                .readinessLevel(ReadinessLevel.LEVEL_2)
+                .description("Team card 3 description")
+                .build());
+        teamCardsService.createTeamCard(TeamCard.builder()
+                .status(TeamCardStatus.OK)
+                .name("Team card 4")
+                .streams(Set.of(stream3))
+                .ntiMarkets(List.of(ntiMarket2))
+                .username(BaseApplicationTest.USER)
+                .readinessLevel(ReadinessLevel.LEVEL_2)
+                .description("Team card 4 description")
                 .build());
 
         mockMvc.perform(post("/api/v1/team-cards/reports")
@@ -846,10 +912,10 @@ class TeamCardsRestControllerImplTest extends BaseApplicationTest {
                                     }
                                   ]
                                 }
-                                """.formatted(stream.getName())))
+                                """.formatted(stream1.getName())))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements", is(1)))
-                .andExpect(jsonPath("$.content[0].streamName", is(stream.getName())));
+                .andExpect(jsonPath("$.content[0].streamName", is(stream1.getName())));
     }
 }

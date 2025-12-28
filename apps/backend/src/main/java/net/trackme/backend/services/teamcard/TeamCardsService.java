@@ -1,7 +1,6 @@
 package net.trackme.backend.services.teamcard;
 
 import net.trackme.backend.domain.TeamCard;
-import net.trackme.backend.rest.api.teamcard.dto.TeamCardReportRecordDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -101,11 +100,4 @@ public interface TeamCardsService {
      * @return Количество команд в потоке
      */
     Integer getTeamCardCount(UUID streamId);
-
-    /**
-     * Получить запись для отчета о командах.
-     * @param teamCard Карточка команды
-     * @return Запись для отчета о командах
-     */
-    TeamCardReportRecordDto mapToTeamCardReportRecordDto(TeamCard teamCard);
 }
