@@ -74,7 +74,7 @@ public class Stream {
 
     public boolean isActive() {
         var today = LocalDate.now();
-        return (startDate == null || startDate.isBefore(today)) &&
-               (endDate == null || endDate.isAfter(today));
+        return (startDate == null || !startDate.isAfter(today))
+                && (endDate == null || !endDate.isBefore(today));
     }
 }
