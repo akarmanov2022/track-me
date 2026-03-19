@@ -92,10 +92,8 @@ public class TeamCardsUseCase {
 
     public Page<TeamCardReportRecordDto> getTeamCardReport(List<Filter> filters,
                                                            Pageable pageable) {
-        var streams = streamService.findAllActive().stream().map(Stream::getName).toList();
-        var teamCardPage = teamCardsService.getTeamCards(
-                withFilters(filters).and(withStreamsAndNtiMarkets(streams)),
-                pageable);
+        var teamCardSpec = withFilters(filters).and(withFetchJoins()).and(hasStream());
+        var teamCardPage = teamCardsService.getTeamCards(teamCardSpec, pageable);
         return teamCardPage.map(teamCardMapper::mapToReportDto);
     }
 }
