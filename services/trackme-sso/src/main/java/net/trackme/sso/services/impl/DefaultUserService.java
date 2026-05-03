@@ -2,6 +2,7 @@ package net.trackme.sso.services.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.trackme.commons.filters.FilterRequest;
 import net.trackme.sso.dao.entity.RoleEntity;
 import net.trackme.sso.dao.entity.UserEntity;
@@ -21,10 +22,17 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestClient;
+
+import java.util.List;
+import java.util.Map;
 
 import static net.trackme.sso.dao.UserSpecification.byRole;
 import static net.trackme.sso.dao.UserSpecification.withFilters;
-
+@Slf4j 
 @Service
 @RequiredArgsConstructor
 public class DefaultUserService implements UserService {
@@ -36,6 +44,9 @@ public class DefaultUserService implements UserService {
   private final PasswordEncoder passwordEncoder;
 
   private final UserMapper userMapper;
+
+  @Value("${app.services.backend.url}")
+  private String backendServiceUrl;
 
   /**
    * Создание пользователя на основе регистрационных данных. Пользователь будет не активирован.
@@ -110,6 +121,40 @@ public class DefaultUserService implements UserService {
   }
 
   @Override
+  @Transactional
+  public void unlockUser(String username) {
+    var userEntity = findByUsername(username);
+    userEntity.setAccountNonLocked(true);
+    userEntity.setActive(false);            
+    save(userEntity);
+    log.info("User {} unlocked", username);
+  }
+
+  @Override
+  @Transactional
+  public void deleteUser(String username) {
+    var userEntity = findByUsername(username);
+    reassignTeamsToRonin(username);
+    userRepository.delete(userEntity);   
+    log.info("User {} deleted", username);
+  }
+
+  @Override
+  public List<String> getUserTeams(String username) {
+    try {
+        RestClient restClient = RestClient.create(backendServiceUrl);
+        return restClient.get()
+            .uri("/api/v1/admin/team-cards/by-user?username={username}", username)
+            .accept(MediaType.APPLICATION_JSON)
+            .retrieve()
+            .body(new ParameterizedTypeReference<List<String>>() {});
+    } catch (Exception e) {
+        log.error("Error getting teams for {}: {}", username, e.getMessage());
+        return List.of();
+    }
+  }
+
+  @Override
   public UserDto getUserInfo(String username) {
     var userEntity = findByUsername(username);
     return UserDto.builder()
@@ -157,5 +202,24 @@ public class DefaultUserService implements UserService {
     var userEntity = findByUsername(username);
     userEntity.setActive(active);
     save(userEntity);
+  }
+
+  private void reassignTeamsToRonin(String username) {
+    try {
+        RestClient restClient = RestClient.create(backendServiceUrl);
+        Map<String, String> request = Map.of(
+            "fromUsername", username,
+            "toUsername", "ronin"
+        );
+        restClient.post()
+            .uri("/api/v1/admin/team-cards/reassign")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(request)
+            .retrieve()
+            .toBodilessEntity();
+        log.info("Teams reassigned from {} to ronin", username);
+    } catch (Exception e) {
+        log.error("Error reassigning teams: {}", e.getMessage());
+    }
   }
 }

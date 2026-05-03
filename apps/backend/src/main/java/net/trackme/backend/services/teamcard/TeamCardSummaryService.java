@@ -62,12 +62,16 @@ public class TeamCardSummaryService {
                     .getTeamCard(UUID.fromString(meetingSummaryEvent.get("teamCardId")));
 
             getStreamByTeamCard(teamCard).ifPresentOrElse(stream -> {
+                // Берём trackerFullName из события (пришло из meeting-service)
+                String trackerFullName = meetingSummaryEvent.getOrDefault("trackerFullName", "Не назначен");
+                
                 TeamCardSummaryEvent teamCardSummaryEvent =
                         TeamCardSummaryEvent.builder()
                                 .teamCardName(teamCard.getName())
                                 .streamName(stream.getName())
                                 .meetingNumber(meetingSummaryEvent.get("meetingNumber"))
                                 .meetingLink(meetingSummaryEvent.get("meetingLink"))
+                                .trackerFullName(trackerFullName)  // ← ДОБАВЛЕНО
                                 .build();
 
                 teamCardSummaryEvents.add(teamCardSummaryEvent);
@@ -78,7 +82,7 @@ public class TeamCardSummaryService {
             return;
         }
 
-         teamCardEventsProducer.sendTeamCardSummaryEvent(teamCardSummaryEvents);
+        teamCardEventsProducer.sendTeamCardSummaryEvent(teamCardSummaryEvents);
     }
 
     private void sendTeamCardLowGradeSummary() {
@@ -97,10 +101,16 @@ public class TeamCardSummaryService {
 
         for (var teamCard : teamCards) {
             getStreamByTeamCard(teamCard).ifPresentOrElse(stream -> {
+                // Берём trackerFullName из TeamCard (если есть)
+                String trackerFullName = teamCard.getTrackerFullName() != null 
+                        ? teamCard.getTrackerFullName() 
+                        : "Не назначен";
+                
                 TeamCardLowGradeSummaryEvent event = TeamCardLowGradeSummaryEvent.builder()
                         .teamCardName(teamCard.getName())
                         .streamName(stream.getName())
                         .averageGrade(teamCard.getAverageGrade())
+                        .trackerFullName(trackerFullName)  // ← ДОБАВЛЕНО
                         .build();
 
                 teamCardLowGradeSummaryEvents.add(event);

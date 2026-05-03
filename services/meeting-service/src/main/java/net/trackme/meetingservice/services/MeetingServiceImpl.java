@@ -28,6 +28,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Sort;
+import net.trackme.meetingservice.messaging.own.MeetingDeletedEvent;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -80,6 +82,8 @@ public class MeetingServiceImpl implements MeetingService {
         meeting.setTeamCardId(teamCardId);
         meeting.setStatus(MeetingStatus.SCHEDULED);
 
+        meeting.setNumber("0");
+
         // Denormalize (Backend)
         meeting.setTeamName(teamData.getName());
         meeting.setStreamIds(teamData.getStreams().stream().map(StreamDto::getId).collect(toSet()));
@@ -101,13 +105,17 @@ public class MeetingServiceImpl implements MeetingService {
             }
         }
 
-        meeting = meetingRepository.save(meeting);
+        var savedMeeting = meetingRepository.saveAndFlush(meeting);
+        renumberMeetingsAfterDeletion(teamCardId);
+
+        var refreshedMeeting = meetingRepository.findById(savedMeeting.getId())
+                .orElseThrow(() -> new MeetingNotFoundException(savedMeeting.getId()));
+
         var username = SecurityContextHolder.getContext().getAuthentication().getName();
+        aclService.createAclForUser(refreshedMeeting, username);
+        sendMeetingCreatedEvent(refreshedMeeting);
 
-        aclService.createAclForUser(meeting, username);
-        sendMeetingCreatedEvent(meeting);
-
-        return enrichWithRoomLink(meetingMapper.mapToDto(meeting), teamCardId);
+        return enrichWithRoomLink(meetingMapper.mapToDto(refreshedMeeting), teamCardId);
     }
 
     @Override
@@ -129,30 +137,61 @@ public class MeetingServiceImpl implements MeetingService {
         if (MeetingStatus.COMPLETED_STATUSES.contains(meeting.getStatus())) {
             throw new MeetingCompletedException(meetingId, teamCardId);
         }
+        
+        OffsetDateTime oldStartDate = meeting.getStartDate();
+        boolean dateChanged = updateDto.startDate() != null && 
+                             !updateDto.startDate().equals(oldStartDate);
 
-        if (updateDto.startDate() != null) {
+        if (dateChanged) {
             validateNoMeetingOnSameDay(teamCardId, updateDto.startDate(), meetingId);
         }
-
+        
         var oldStatus = meeting.getStatus();
         meetingMapper.updateEntityFromDto(updateDto, meeting);
-        meeting = meetingRepository.save(meeting);
+        var savedMeeting = meetingRepository.saveAndFlush(meeting);
+
+        if (dateChanged) {
+            renumberMeetingsAfterDateChange(teamCardId);
+            meetingRepository.flush();
+            savedMeeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new MeetingNotFoundException(meetingId));
+        }
 
         if (oldStatus != meeting.getStatus()) {
-            sendMeetingUpdatedEvent(meeting, oldStatus);
+            sendMeetingUpdatedEvent(savedMeeting, oldStatus);
         }
-        return enrichWithRoomLink(meetingMapper.mapToDto(meeting), teamCardId);
+
+        return enrichWithRoomLink(meetingMapper.mapToDto(savedMeeting), teamCardId);
     }
+
 
     @Override
     @Transactional
     @PreAuthorize(
             "hasPermission(#meetingId,'net.trackme.meetingservice.entities.Meeting', 'READ') or hasRole('ADMIN')")
     public void deleteMeeting(UUID meetingId) {
-        var meeting = meetingRepository.getReferenceById(meetingId);
-        meetingRepository.delete(meeting);
-        aclService.deleteAcl(meeting);
+    var meeting = meetingRepository.findById(meetingId) 
+            .orElseThrow(() -> new MeetingNotFoundException(meetingId));
+    
+    UUID teamCardId = meeting.getTeamCardId(); 
+    
+    meetingRepository.delete(meeting);
+    aclService.deleteAcl(meeting);
+    
+    renumberMeetingsAfterDeletion(teamCardId);
+    meetingRepository.flush();
+    
+    var event = MeetingDeletedEvent.builder()
+            .meetingId(meetingId)
+            .teamCardId(teamCardId)
+            .startDate(meeting.getStartDate())
+            .build();
+    meetingEventsProducer.sendMeetingDeletedEvent(event);
+    
+    log.info("Meeting {} deleted and meetings renumbered for team card {}", 
+             meetingId, teamCardId);
     }
+    
 
     @Override
     @Transactional
@@ -202,13 +241,35 @@ public class MeetingServiceImpl implements MeetingService {
     }
 
     /**
+     * Пересчитывает номера встреч после удаления.
+     * Встречи сортируются по дате (от ранних к поздним) и получают новые номера.
+     */
+    private void renumberMeetingsAfterDeletion(UUID teamCardId) {
+        var meetings = meetingRepository.findAll(
+                teamCardIdEquals(teamCardId),
+                Sort.by(Sort.Direction.ASC, "startDate")
+        );
+        
+        int number = 1;
+        for (Meeting m : meetings) {
+            m.setNumber(String.valueOf(number));
+            number++;
+        }
+
+        meetingRepository.saveAllAndFlush(meetings);
+        
+        log.debug("Renumbered {} meetings for team card {}", meetings.size(), teamCardId);
+    }
+
+    /**
+     * Перенумеровывает встречи после изменения даты.
+     */
+    private void renumberMeetingsAfterDateChange(UUID teamCardId) {
+        renumberMeetingsAfterDeletion(teamCardId);
+    }
+
+    /**
      * Проверяет отсутствие встречи для карточки команды в указанный день.
-     *
-     * @param teamCardId идентификатор карточки команды
-     * @param startDate  дата и время встречи
-     * @param excludeId  идентификатор встречи для исключения из проверки,
-     *                   {@code null} при создании новой встречи
-     * @throws MeetingAlreadyExistsInSameDayException если встреча на этот день уже существует
      */
     private void validateNoMeetingOnSameDay(UUID teamCardId, OffsetDateTime startDate, UUID excludeId) {
         var date = startDate.toLocalDate();

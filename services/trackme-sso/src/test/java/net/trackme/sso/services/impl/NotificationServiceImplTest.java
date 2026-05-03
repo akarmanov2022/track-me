@@ -55,6 +55,7 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
         String teamCardName = "test team";
         String streamName = "test stream";
         String meetingLink = "test link";
+        String trackerFullName = "Петров Петр Петрович";
 
         MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
@@ -69,7 +70,8 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
                 teamCardUsername,
                 teamCardName,
                 streamName,
-                meetingLink);
+                meetingLink,
+                trackerFullName);
 
         // Assert
         verify(javaMailSender, times(1)).send(any(MimeMessage.class));
@@ -82,7 +84,7 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
         String teamCardName = "test team";
         String streamName = "test stream";
         String meetingLink = "test link";
-
+        
         MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
 
@@ -97,7 +99,8 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
                         teamCardUsername,
                         teamCardName,
                         streamName,
-                        meetingLink));
+                        meetingLink,
+                        null));
     }
 
     @Test

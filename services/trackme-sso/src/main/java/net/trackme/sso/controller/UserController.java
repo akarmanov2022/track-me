@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Validated
 @Tag(name = "API для управления пользователями")
 @RequestMapping("/api/v1/users")
@@ -24,6 +26,18 @@ public interface UserController {
   @PostMapping("/disable")
   @Operation(summary = "Отключить пользователя")
   ResponseEntity<Void> disableUser(@RequestParam String username);
+
+  @PostMapping("/unlock")
+  @Operation(summary = "Разблокировать пользователя")
+  ResponseEntity<Void> unlockUser(@RequestParam String username);
+
+  @DeleteMapping
+  @Operation(summary = "Полностью удалить пользователя из системы")
+  ResponseEntity<Void> deleteUser(@RequestParam String username);
+
+  @GetMapping("/{username}/teams")
+  @Operation(summary = "Получить список команд пользователя")
+  ResponseEntity<List<String>> getUserTeams(@PathVariable String username);
 
   @GetMapping(path = "/{username}/info", produces = "application/json")
   @Operation(summary = "Получить информацию о пользователе")

@@ -21,6 +21,8 @@
 
     import java.util.Collections;
     import java.util.UUID;
+    import java.util.stream.Collectors;
+    import java.util.List;
 
     @Slf4j
     @Service
@@ -197,5 +199,37 @@
             if (source.getReadinessLevel() != null) {
                 target.setReadinessLevel(source.getReadinessLevel());
             }
+        }
+
+        @Override
+        @Transactional
+        public List<String> getTeamCardNamesByUser(String username) {
+            List<TeamCard> teams = teamCardsRepository.findByUsername(username);
+            return teams.stream()
+                .map(TeamCard::getName)
+                .toList();
+        }
+
+        @Override
+        public List<TeamCard> getTeamCardsByUser(String username) {
+        return teamCardsRepository.findByUsername(username);
+        }
+
+        @Override
+        @Transactional
+        public void reassignTeams(String fromUsername, String toUsername) {
+            List<TeamCard> teams = teamCardsRepository.findByUsername(fromUsername);
+            log.info("Reassigning {} teams from '{}' to '{}'", teams.size(), fromUsername, toUsername);
+        
+            for (TeamCard team : teams) {
+                team.setUsername(toUsername);
+                eventPublisher.publishEvent(new TeamCardChangedInternalEvent(
+                    team.getId(),
+                    team.getName(),
+                    toUsername
+                ));
+            }
+
+            teamCardsRepository.saveAll(teams);
         }
     }

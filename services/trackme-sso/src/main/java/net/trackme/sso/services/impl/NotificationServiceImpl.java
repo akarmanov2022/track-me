@@ -1,5 +1,12 @@
 package net.trackme.sso.services.impl;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.trackme.sso.config.AppProperties;
@@ -7,12 +14,6 @@ import net.trackme.sso.dao.entity.UserEntity;
 import net.trackme.sso.dao.repository.UserRepository;
 import net.trackme.sso.services.EmailService;
 import net.trackme.sso.services.NotificationService;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -29,18 +30,23 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendMeetingNotHappenedNotification(String teamCardUsername,
                                                    String teamCardName,
                                                    String streamName,
-                                                   String meetingLink) {
+                                                   String meetingLink,
+                                                   String trackerFullName) {
         var emailTo = userRepository.findByUsername(teamCardUsername)
-                .map(UserEntity::getEmail)
                 .orElseThrow();
 
+        String fullName = (trackerFullName != null && !trackerFullName.isBlank()) 
+        ? getShortName(trackerFullName) 
+        : emailTo.getFullName();        
+
         emailService.sendMail(
-                emailTo,
+                emailTo.getEmail(),
                 appProperties.getMail().getFrom(),
                 "[" + appProperties.getMail().getSubject() + "] Пропущена встреча",
                 "email-meeting-not-happened.html",
                 Map.of(
                         "email", emailTo,
+                        "fullName", fullName,
                         "appName", appProperties.getMail().getSubject(),
                         "supportEmail", appProperties.getMail().getFrom(),
                         "teamCardName", teamCardName,
@@ -54,10 +60,13 @@ public class NotificationServiceImpl implements NotificationService {
         int count = 1;
         List<String> infos = new ArrayList<>();
         for (var teamCardSummaryEvent : teamCardSummaryEvents) {
-            var info = String.format("%d. Поток: %s - Команда: %s - Встреча: %s<br>Ссылка на встречу: %s",
+            String trackerInfo = getShortName(teamCardSummaryEvent.getOrDefault("trackerFullName", "Не назначен"));
+            
+            var info = String.format("%d. Поток: %s, Команда: %s, Трекер: %s, Встреча: %s<br>Ссылка на встречу: %s",
                     count,
                     teamCardSummaryEvent.get("streamName"),
                     teamCardSummaryEvent.get("teamCardName"),
+                    trackerInfo,
                     teamCardSummaryEvent.get("meetingNumber"),
                     teamCardSummaryEvent.get("meetingLink"));
             count++;
@@ -78,10 +87,13 @@ public class NotificationServiceImpl implements NotificationService {
         int count = 1;
         List<String> infos = new ArrayList<>();
         for (var teamCardSummaryEvent : teamCardLowGradeSummaryEvents) {
-            var info = String.format("%d. Поток: %s - Команда: %s - Рейтинг: %s",
+            String trackerInfo = getShortName(teamCardSummaryEvent.getOrDefault("trackerFullName", "Не назначен"));
+            
+            var info = String.format("%d. Поток: %s, Команда: %s, Трекер: %s, Рейтинг: %s",
                     count,
                     teamCardSummaryEvent.get("streamName"),
                     teamCardSummaryEvent.get("teamCardName"),
+                    trackerInfo,
                     teamCardSummaryEvent.get("averageGrade"));
             count++;
             infos.add(info);
@@ -106,7 +118,6 @@ public class NotificationServiceImpl implements NotificationService {
                                  .getSummarySendRoles()
                                 .contains(roleEntity.getCode())))
                 .filter(UserEntity::getActive)
-                .map(UserEntity::getEmail)
                 .toList();
 
 
@@ -115,15 +126,27 @@ public class NotificationServiceImpl implements NotificationService {
         }
         for (var emailTo : emailTos) {
             emailService.sendMail(
-                    emailTo,
+                    emailTo.getEmail(),
                     appProperties.getMail().getFrom(),
                     subject,
                     templateName,
                     Map.of(
-                            "email", emailTo,
+                            "email", emailTo.getEmail(),
+                            "fullName", emailTo.getFullName(),
                             "appName", appProperties.getMail().getSubject(),
                             "supportEmail", appProperties.getMail().getFrom(),
                             "summary", summary));
         }
+    }
+
+    private String getShortName(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return "Не назначен";
+        }
+        String[] parts = fullName.trim().split(" ");
+        if (parts.length >= 2) {
+            return parts[0] + " " + parts[1];
+        }
+        return fullName;
     }
 }

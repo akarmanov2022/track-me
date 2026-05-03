@@ -17,6 +17,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.util.List;
+import java.util.Map;
 
 @Tag(name = "Team Cards API",
      description = "API для работы с карточками команд для администратора")
@@ -66,4 +68,13 @@ public interface TeamCardsAdminRestController {
                  example = "123e4567-e89b-12d3-a456-426614174000")
       @RequestParam UUID id,
       @RequestParam String username);
+
+  @GetMapping("team-cards/by-user")
+  @Operation(summary = "Получить список команд пользователя")
+  ResponseEntity<List<Map<String, String>>> getTeamsByUser(@RequestParam String username);
+
+  @PostMapping("team-cards/reassign")
+  @Operation(summary = "Переназначить команды с одного пользователя на другого")
+  ResponseEntity<Void> reassignTeams(@RequestBody Map<String, String> request);
+  
 }

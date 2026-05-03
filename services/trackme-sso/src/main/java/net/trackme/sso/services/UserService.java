@@ -7,6 +7,8 @@ import net.trackme.sso.dto.UserDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface UserService {
 
   /**
@@ -29,6 +31,15 @@ public interface UserService {
   void enableUser(String username);
 
   void disableUser(String username);
+
+  // НОВЫЙ МЕТОД: разблокировка пользователя
+  void unlockUser(String username);
+
+  // НОВЫЙ МЕТОД: полное удаление пользователя с переназначением команд
+  void deleteUser(String username);
+
+  // НОВЫЙ МЕТОД: получение списка команд пользователя
+  List<String> getUserTeams(String username);
 
   UserDto getUserInfo(String username);
 
