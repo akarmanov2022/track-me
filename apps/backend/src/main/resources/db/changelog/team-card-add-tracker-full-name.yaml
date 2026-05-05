@@ -4,11 +4,11 @@ databaseChangeLog:
       author: developer
       preConditions:
         - onFail: MARK_RAN
-          not:
-            columnExists:
-              schemaName: ${db_schema}
-              tableName: team_card
-              columnName: tracker_full_name
+        - not:
+            - columnExists:
+                schemaName: ${db_schema}
+                tableName: team_card
+                columnName: tracker_full_name
       changes:
         - addColumn:
             schemaName: ${db_schema}

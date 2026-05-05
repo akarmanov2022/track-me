@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -26,7 +27,7 @@ public class DefaultUserController implements UserController {
   public ResponseEntity<Void> enableUser(String username) {
     log.info("Enabling user: {}", username);
     userService.enableUser(username);
-    return null;
+    return ResponseEntity.ok().build();
   }
 
   @Override
@@ -34,7 +35,7 @@ public class DefaultUserController implements UserController {
   public ResponseEntity<Void> disableUser(String username) {
     log.info("Disabling user: {}", username);
     userService.disableUser(username);
-    return null;
+    return ResponseEntity.ok().build();
   }
 
   // НОВЫЙ МЕТОД: разблокировка
@@ -58,9 +59,9 @@ public class DefaultUserController implements UserController {
   // НОВЫЙ МЕТОД: список команд пользователя
   @Override
   @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<List<String>> getUserTeams(String username) {
+  public ResponseEntity<List<Map<String, String>>> getUserTeams(String username) {
     log.info("Getting teams for user: {}", username);
-    List<String> teams = userService.getUserTeams(username);
+    List<Map<String, String>> teams = userService.getUserTeams(username);
     return ResponseEntity.ok(teams);
   }
 

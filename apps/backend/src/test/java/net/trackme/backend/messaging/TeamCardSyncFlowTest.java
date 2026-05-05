@@ -86,6 +86,7 @@ class TeamCardSyncFlowTest {
         var event = TeamCardUpdatedEvent.builder()
                 .teamCardId(teamId)
                 .newName("Name")
+                .trackerFullName("Иванов Иван Иванович")
                 .build();
 
         producer.sendTeamCardUpdatedEvent(event);

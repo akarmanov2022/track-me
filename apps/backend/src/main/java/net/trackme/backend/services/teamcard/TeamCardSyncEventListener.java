@@ -24,14 +24,15 @@ public class TeamCardSyncEventListener {
     public void handleMetadataChange(TeamCardChangedInternalEvent internalEvent) {
         log.info(
             "[Sync] Транзакция зафиксирована. " +
-            "Отправка обновления метаданных в Kafka для команды: {} (название: {}, трекер: {})",
-            internalEvent.teamCardId(), internalEvent.newName(), internalEvent.newUsername()
+            "Отправка обновления метаданных в Kafka для команды: {} (название: {}, трекер: {}, fullName: {})",
+            internalEvent.teamCardId(), internalEvent.newName(), internalEvent.newUsername(), internalEvent.trackerFullName()
         );
 
         kafkaProducer.sendTeamCardUpdatedEvent(TeamCardUpdatedEvent.builder()
                 .teamCardId(internalEvent.teamCardId())
                 .newName(internalEvent.newName())
                 .newUsername(internalEvent.newUsername())
+                .trackerFullName(internalEvent.trackerFullName())
                 .build());
     }
 

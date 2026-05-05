@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface UserService {
 
@@ -39,7 +40,7 @@ public interface UserService {
   void deleteUser(String username);
 
   // НОВЫЙ МЕТОД: получение списка команд пользователя
-  List<String> getUserTeams(String username);
+  List<Map<String, String>> getUserTeams(String username);
 
   UserDto getUserInfo(String username);
 

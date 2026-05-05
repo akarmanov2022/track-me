@@ -21,8 +21,7 @@
 
     import java.util.Collections;
     import java.util.UUID;
-    import java.util.stream.Collectors;
-    import java.util.List;
+    import java.util.List;  
 
     @Slf4j
     @Service
@@ -53,6 +52,9 @@
         @Override
         public TeamCard createTeamCard(TeamCard createTeamCard) {
             createTeamCard.setStatus(TeamCardStatus.OK);
+            if (createTeamCard.getTrackerFullName() == null) {
+                createTeamCard.setTrackerFullName(createTeamCard.getUsername());
+            }
             createTeamCard = teamCardsRepository.save(createTeamCard);
             var username = SecurityContextHolder.getContext().getAuthentication().getName();
             aclService.createAclForUser(createTeamCard, username);
@@ -69,7 +71,8 @@
             eventPublisher.publishEvent(new TeamCardChangedInternalEvent(
                 teamCardId,
                 teamCard.getName(),
-                teamCard.getUsername()
+                teamCard.getUsername(),
+                teamCard.getTrackerFullName()
             ));
 
             return teamCard;
@@ -98,6 +101,9 @@
         public TeamCard createTeamCard(TeamCard create, String username) {
             create.setUsername(username);
             create.setStatus(TeamCardStatus.OK);
+            if (create.getTrackerFullName() == null) {
+                create.setTrackerFullName(username);
+            }
             create = teamCardsRepository.save(create);
             aclService.createAclForUser(
                     create, username, SecurityContextHolder.getContext().getAuthentication().getName());
@@ -129,7 +135,8 @@
             eventPublisher.publishEvent(new TeamCardChangedInternalEvent(
                 teamCardId,
                 teamCard.getName(),
-                teamCard.getUsername()
+                teamCard.getUsername(),
+                teamCard.getTrackerFullName()
             ));
 
             return teamCard;
@@ -187,6 +194,9 @@
             if (source.getDescription() != null) {
                 target.setDescription(source.getDescription());
             }
+            if (source.getTrackerFullName() != null) {
+                target.setTrackerFullName(source.getTrackerFullName());
+            }
             if (source.getMeetingRoomLink() != null) {
                 target.setMeetingRoomLink(source.getMeetingRoomLink());
             }
@@ -226,7 +236,8 @@
                 eventPublisher.publishEvent(new TeamCardChangedInternalEvent(
                     team.getId(),
                     team.getName(),
-                    toUsername
+                    toUsername,
+                    team.getTrackerFullName()
                 ));
             }
 

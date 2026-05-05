@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Validated
 @Tag(name = "API для управления пользователями")
@@ -37,7 +38,7 @@ public interface UserController {
 
   @GetMapping("/{username}/teams")
   @Operation(summary = "Получить список команд пользователя")
-  ResponseEntity<List<String>> getUserTeams(@PathVariable String username);
+  ResponseEntity<List<Map<String, String>>> getUserTeams(@PathVariable String username);
 
   @GetMapping(path = "/{username}/info", produces = "application/json")
   @Operation(summary = "Получить информацию о пользователе")

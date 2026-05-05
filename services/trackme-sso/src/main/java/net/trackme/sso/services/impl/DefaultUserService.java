@@ -19,6 +19,8 @@ import net.trackme.sso.type.AuthErrorCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -38,6 +40,10 @@ import static net.trackme.sso.dao.UserSpecification.withFilters;
 public class DefaultUserService implements UserService {
 
   private final UserRepository userRepository;
+
+  private static final String RONIN = "ronin";
+
+  private static final String ROLE_SUPER_ADMIN = "ROLE_SUPER_ADMIN";
 
   private final RoleRepository roleRepository;
 
@@ -106,51 +112,63 @@ public class DefaultUserService implements UserService {
   @Override
   @Transactional
   public void enableUser(String username) {
-    changeActivity(username, true);
+      if (RONIN.equals(username)) {
+          checkSuperAdmin();
+      }
+      changeActivity(username, true);
   }
 
   @Override
   @Transactional
   public void disableUser(String username) {
-    var userEntity = findByUsername(username);
-    if (Boolean.FALSE.equals(userEntity.getActive())) {
-      userEntity.setAccountNonLocked(false);
-      save(userEntity);
-    }
-    changeActivity(username, false);
+      if (RONIN.equals(username)) {
+          checkSuperAdmin();
+      }
+      var userEntity = findByUsername(username);
+      if (Boolean.FALSE.equals(userEntity.getActive())) {
+          userEntity.setAccountNonLocked(false);
+          save(userEntity);
+      }
+      changeActivity(username, false);
   }
 
   @Override
   @Transactional
   public void unlockUser(String username) {
-    var userEntity = findByUsername(username);
-    userEntity.setAccountNonLocked(true);
-    userEntity.setActive(false);            
-    save(userEntity);
-    log.info("User {} unlocked", username);
+      if (RONIN.equals(username)) {
+          checkSuperAdmin();
+      }
+      var userEntity = findByUsername(username);
+      userEntity.setAccountNonLocked(true);
+      userEntity.setActive(false);
+      save(userEntity);
+      log.info("User {} unlocked", username);
   }
 
   @Override
   @Transactional
   public void deleteUser(String username) {
-    var userEntity = findByUsername(username);
-    reassignTeamsToRonin(username);
-    userRepository.delete(userEntity);   
-    log.info("User {} deleted", username);
+      if (RONIN.equals(username)) {
+          checkSuperAdmin();
+      }
+      var userEntity = findByUsername(username);
+      reassignTeamsToRonin(username);
+      userRepository.delete(userEntity);
+      log.info("User {} deleted", username);
   }
 
   @Override
-  public List<String> getUserTeams(String username) {
+  public List<Map<String, String>> getUserTeams(String username) {
     try {
-        RestClient restClient = RestClient.create(backendServiceUrl);
-        return restClient.get()
-            .uri("/api/v1/admin/team-cards/by-user?username={username}", username)
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .body(new ParameterizedTypeReference<List<String>>() {});
+      RestClient restClient = RestClient.create(backendServiceUrl);
+      return restClient.get()
+          .uri("/api/v1/admin/team-cards/by-user?username={username}", username)
+          .accept(MediaType.APPLICATION_JSON)
+          .retrieve()
+          .body(new ParameterizedTypeReference<List<Map<String, String>>>() {});
     } catch (Exception e) {
-        log.error("Error getting teams for {}: {}", username, e.getMessage());
-        return List.of();
+      log.error("Error getting teams for {}: {}", username, e.getMessage());
+      return List.of();
     }
   }
 
@@ -188,38 +206,47 @@ public class DefaultUserService implements UserService {
     return admins.map(userMapper::userEntityToUserDto);
   }
 
-    @Override
-    public boolean existsByEmailOrUsername(String email, String username) {
-        return userRepository.existsByEmailOrUsername(email, username);
-    }
+  @Override
+  public boolean existsByEmailOrUsername(String email, String username) {
+    return userRepository.existsByEmailOrUsername(email, username);
+  }
 
-    @Override
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
-    }
+  @Override
+  public boolean existsByEmail(String email) {
+    return userRepository.existsByEmail(email);
+  }
 
-    private void changeActivity(String username, boolean active) {
+  private void changeActivity(String username, boolean active) {
     var userEntity = findByUsername(username);
     userEntity.setActive(active);
     save(userEntity);
   }
 
-  private void reassignTeamsToRonin(String username) {
+  private void checkSuperAdmin() {
+      var auth = SecurityContextHolder.getContext().getAuthentication();
+      if (auth == null || auth.getAuthorities().stream()
+              .noneMatch(a -> a.getAuthority().equals(ROLE_SUPER_ADMIN))) {
+          throw new AccessDeniedException("Ronin user can only be modified by SUPER_ADMIN");
+      }
+  }
+
+    private void reassignTeamsToRonin(String username) {
     try {
-        RestClient restClient = RestClient.create(backendServiceUrl);
-        Map<String, String> request = Map.of(
-            "fromUsername", username,
-            "toUsername", "ronin"
-        );
-        restClient.post()
-            .uri("/api/v1/admin/team-cards/reassign")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(request)
-            .retrieve()
-            .toBodilessEntity();
-        log.info("Teams reassigned from {} to ronin", username);
+      RestClient restClient = RestClient.create(backendServiceUrl);
+      Map<String, String> request = Map.of(
+          "fromUsername", username,
+          "toUsername", RONIN
+      );
+      restClient.post()
+          .uri("/api/v1/admin/team-cards/reassign")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(request)
+          .retrieve()
+          .toBodilessEntity();
+      log.info("Teams reassigned from {} to ronin", username);
     } catch (Exception e) {
-        log.error("Error reassigning teams: {}", e.getMessage());
+      log.error("Error reassigning teams: {}", e.getMessage());
+      throw new IllegalStateException("Failed to reassign teams: " + e.getMessage(), e);
     }
   }
 }

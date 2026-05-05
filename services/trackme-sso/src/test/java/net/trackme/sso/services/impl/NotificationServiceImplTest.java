@@ -16,7 +16,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -105,13 +104,14 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
 
     @Test
     void sendTeamCardSummary_success() {
-        // Arrange
-        LinkedHashMap<String, String> teamCardSummaryEvent = new LinkedHashMap<>();
+        LinkedHashMap<String, String> event1 = new LinkedHashMap<>();
+        event1.put("streamName", "Поток 1");
+        event1.put("teamCardName", "Команда 1");
+        event1.put("trackerFullName", "Иванов Иван Иванович");
+        event1.put("meetingNumber", "1");
+        event1.put("meetingLink", "http://example.com/meeting/1");
 
-        List<LinkedHashMap<String, String>> teamCardSummaryEvents =
-                new ArrayList<>(){{
-                    add(teamCardSummaryEvent);
-        }};
+        List<LinkedHashMap<String, String>> teamCardSummaryEvents = List.of(event1);
 
         MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
@@ -121,22 +121,20 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
                 appProperties,
                 emailService);
 
-        // Act
         notificationService.sendTeamCardSummary(teamCardSummaryEvents);
 
-        // Assert
         verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
 
     @Test
     void sendTeamCardLowGradeSummary_success() {
-        // Arrange
-        LinkedHashMap<String, String> teamCardLowGradeSummaryEvent = new LinkedHashMap<>();
+        LinkedHashMap<String, String> event1 = new LinkedHashMap<>();
+        event1.put("streamName", "Поток 1");
+        event1.put("teamCardName", "Команда 1");
+        event1.put("trackerFullName", "Иванов Иван Иванович");
+        event1.put("averageGrade", "0.25");
 
-        List<LinkedHashMap<String, String>> teamCardLowGradeSummaryEvents =
-                new ArrayList<>(){{
-                    add(teamCardLowGradeSummaryEvent);
-                }};
+        List<LinkedHashMap<String, String>> teamCardLowGradeSummaryEvents = List.of(event1);
 
         MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
@@ -146,10 +144,8 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
                 appProperties,
                 emailService);
 
-        // Act
         notificationService.sendTeamCardLowGradeSummary(teamCardLowGradeSummaryEvents);
 
-        // Assert
         verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
 }
