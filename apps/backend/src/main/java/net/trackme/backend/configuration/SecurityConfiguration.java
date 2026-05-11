@@ -1,6 +1,5 @@
 package net.trackme.backend.configuration;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
@@ -14,7 +13,10 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
-import static net.trackme.backend.models.UserRole.*;
+import lombok.RequiredArgsConstructor;
+import static net.trackme.backend.models.UserRole.ADMIN;
+import static net.trackme.backend.models.UserRole.SUPER_ADMIN;
+import static net.trackme.backend.models.UserRole.TRACKER;
 
 /**
  * Настройки безопасности.
@@ -36,11 +38,6 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(AbstractHttpConfigurer::disable)
-                .csrf(csrf -> csrf
-                    .ignoringRequestMatchers(
-                        "/api/v1/admin/team-cards/by-user",
-                        "/api/v1/admin/team-cards/reassign")
-                )
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(

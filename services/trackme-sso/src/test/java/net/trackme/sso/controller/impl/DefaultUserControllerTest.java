@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,11 +18,14 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class DefaultUserControllerTest extends AbstractIntegrationTest {
+
+  private static final String TRACKER = "tracker";
 
   @Autowired
   private MockMvc mockMvc;
@@ -35,14 +39,15 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @BeforeEach
   void setUp() {
     try {
-      UserEntity tracker = userService.findByUsername("tracker");
+      UserEntity tracker = userService.findByUsername(TRACKER);
       if (tracker != null) {
-        userService.disableUser("tracker");
+        userService.disableUser(TRACKER);
         if (!tracker.getAccountNonLocked()) {
-          userService.unlockUser("tracker");
+          userService.unlockUser(TRACKER);
         }
       }
-    } catch (Exception e) {
+    } catch (UsernameNotFoundException e) {
+      // Пользователь tracker не найден в тестовой БД — OK
     }
   }
 
@@ -51,62 +56,62 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   void enableUser_success() throws Exception {
 
     mockMvc.perform(formLogin(SecurityConfiguration.LOGIN_PAGE)
-            .user("tracker")
-            .password("tracker"))
+            .user(TRACKER)
+            .password(TRACKER))
         .andExpect(status().isFound())
         .andExpect(header().string("Location", containsString("error")));
 
     mockMvc.perform(post("/api/v1/users/enable")
-            .param("username", "tracker")
+            .param("username", TRACKER)
             .with(csrf()))
         .andExpect(status().isOk());
 
     mockMvc.perform(formLogin(SecurityConfiguration.LOGIN_PAGE)
-            .user("tracker")
-            .password("tracker"))
+            .user(TRACKER)
+            .password(TRACKER))
         .andExpect(status().isFound())
         .andExpect(header().string("Location", "/"));
 
-    assertThat(userDetailsService.loadUserByUsername("tracker").isEnabled())
+    assertThat(userDetailsService.loadUserByUsername(TRACKER).isEnabled())
         .isTrue();
-    userService.disableUser("tracker");
+    userService.disableUser(TRACKER);
   }
 
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void disableUser_success() throws Exception {
 
-    userService.enableUser("tracker");
+    userService.enableUser(TRACKER);
 
     mockMvc.perform(formLogin(SecurityConfiguration.LOGIN_PAGE)
-            .user("tracker")
-            .password("tracker"))
+            .user(TRACKER)
+            .password(TRACKER))
         .andExpect(status().isFound())
         .andExpect(header().string("Location", not(containsString("error"))));
 
     mockMvc.perform(post("/api/v1/users/disable")
-            .param("username", "tracker")
+            .param("username", TRACKER)
             .with(csrf()))
         .andExpect(status().isOk());
 
     mockMvc.perform(formLogin(SecurityConfiguration.LOGIN_PAGE)
-            .user("tracker")
-            .password("tracker"))
+            .user(TRACKER)
+            .password(TRACKER))
         .andExpect(status().isFound())
         .andExpect(header().string("Location", containsString("error")));
 
-    assertThat(userDetailsService.loadUserByUsername("tracker").isEnabled())
+    assertThat(userDetailsService.loadUserByUsername(TRACKER).isEnabled())
         .isFalse();
 
     mockMvc.perform(post("/api/v1/users/disable")
-           .param("username", "tracker")
+           .param("username", TRACKER)
            .with(csrf()))
         .andExpect(status().isOk());
 
-    assertThat(userService.findByUsername("tracker").getAccountNonLocked())
+    assertThat(userService.findByUsername(TRACKER).getAccountNonLocked())
         .isFalse();
 
-    userService.enableUser("tracker");
+    userService.enableUser(TRACKER);
   }
 
   @Test
@@ -119,19 +124,19 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @WithMockUser(username = "tracker", roles = "TRACKER")
+  @WithMockUser(username = TRACKER, roles = "TRACKER")
   void enableUser_notSuperAdmin() throws Exception {
     mockMvc.perform(post("/api/v1/users/enable")
-            .param("username", "tracker")
+            .param("username", TRACKER)
             .with(csrf()))
         .andExpect(status().isForbidden());
   }
 
   @Test
-  @WithMockUser(username = "tracker", roles = "TRACKER")
+  @WithMockUser(username = TRACKER, roles = "TRACKER")
   void disableUser_notSuperAdmin() throws Exception {
     mockMvc.perform(post("/api/v1/users/disable")
-            .param("username", "tracker")
+            .param("username", TRACKER)
             .with(csrf()))
         .andExpect(status().isForbidden());
   }
@@ -139,16 +144,16 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void getUserInfo_success() throws Exception {
-    mockMvc.perform(get("/api/v1/users/{username}/info", "tracker"))
+    mockMvc.perform(get("/api/v1/users/{username}/info", TRACKER))
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "application/json"))
-        .andExpect(jsonPath("$.username").value("tracker"));
+        .andExpect(jsonPath("$.username").value(TRACKER));
   }
 
   @Test
-  @WithMockUser(username = "tracker", roles = "TRACKER")
+  @WithMockUser(username = TRACKER, roles = "TRACKER")
   void getUserInfo_notSuperAdmin() throws Exception {
-    mockMvc.perform(get("/api/v1/users/{username}/info", "tracker"))
+    mockMvc.perform(get("/api/v1/users/{username}/info", TRACKER))
         .andExpect(status().isForbidden());
   }
 
@@ -163,7 +168,7 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
             .with(csrf()))
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "application/json"))
-        .andExpect(jsonPath("$.content[*].username").value(hasItem("tracker")))
+        .andExpect(jsonPath("$.content[*].username").value(hasItem(TRACKER)))
         .andExpect(jsonPath("$.content[*].username").value(hasItem("ronin")))
         .andExpect(jsonPath("$.content.length()").value(2))
         .andExpect(jsonPath("$.page.totalElements").value(2));
@@ -180,7 +185,7 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
             .with(csrf()))
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "application/json"))
-        .andExpect(jsonPath("$.content[0].username").value("tracker"));
+        .andExpect(jsonPath("$.content[0].username").value(TRACKER));
   }
 
   @Test
@@ -196,7 +201,7 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @WithMockUser(username = "tracker", roles = "TRACKER")
+  @WithMockUser(username = TRACKER, roles = "TRACKER")
   void findAllTrackers_notSuperAdmin() throws Exception {
     mockMvc.perform(post("/api/v1/users/trackers")
             .contentType("application/json")
@@ -219,5 +224,61 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "application/json"))
         .andExpect(jsonPath("$.content[0].username").value("admin"));
+  }
+
+  @Test
+  @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
+  void unlockUser_success() throws Exception {
+    userService.disableUser(TRACKER);
+    userService.disableUser(TRACKER);
+
+    mockMvc.perform(post("/api/v1/users/unlock")
+            .param("username", TRACKER)
+            .with(csrf()))
+        .andExpect(status().isOk());
+
+    assertThat(userService.findByUsername(TRACKER).getAccountNonLocked()).isTrue();
+  }
+
+  @Test
+  @WithMockUser(username = TRACKER, roles = "TRACKER")
+  void unlockUser_notSuperAdmin() throws Exception {
+    mockMvc.perform(post("/api/v1/users/unlock")
+            .param("username", TRACKER)
+            .with(csrf()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
+  void getUserTeams_success() throws Exception {
+    mockMvc.perform(get("/api/v1/users/{username}/teams", TRACKER))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Content-Type", "application/json"));
+  }
+
+  @Test
+  @WithMockUser(username = TRACKER, roles = "TRACKER")
+  void getUserTeams_notSuperAdmin() throws Exception {
+    mockMvc.perform(get("/api/v1/users/{username}/teams", TRACKER))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
+  void deleteUser_notFound() throws Exception {
+    mockMvc.perform(delete("/api/v1/users")
+            .param("username", "nonexistentuser")
+            .with(csrf()))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(username = TRACKER, roles = "TRACKER")
+  void deleteUser_notSuperAdmin() throws Exception {
+    mockMvc.perform(delete("/api/v1/users")
+            .param("username", TRACKER)
+            .with(csrf()))
+        .andExpect(status().isForbidden());
   }
 }

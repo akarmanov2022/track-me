@@ -20,7 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -29,6 +29,10 @@ import static org.mockito.Mockito.*;
         MailSenderValidatorAutoConfiguration.class
 })
 class NotificationServiceImplTest extends AbstractIntegrationTest {
+
+    private static final String TEST_TEAM_NAME = "test team";
+    private static final String TEST_STREAM_NAME = "test stream";
+    private static final String TEST_MEETING_LINK = "test link";
 
     @Autowired
     private UserRepository userRepository;
@@ -40,8 +44,7 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
     private JavaMailSender javaMailSender;
 
     @BeforeEach
-    void setUpUsers()
-    {
+    void setUpUsers() {
         var admin = userRepository.findByUsername("superadmin").stream().findFirst().orElseThrow();
         admin.setEmail("superadmin@superadmin.ru");
         userRepository.save(admin);
@@ -49,57 +52,43 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
 
     @Test
     void sendMeetingNotHappenedNotification_success() {
-        // Arrange
-        String teamCardUsername = "tracker";
-        String teamCardName = "test team";
-        String streamName = "test stream";
-        String meetingLink = "test link";
-        String trackerFullName = "Петров Петр Петрович";
-
         MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
 
         NotificationService notificationService = new NotificationServiceImpl(
-                userRepository,
-                appProperties,
-                emailService);
+                userRepository, appProperties, emailService);
 
-        // Act
         notificationService.sendMeetingNotHappenedNotification(
-                teamCardUsername,
-                teamCardName,
-                streamName,
-                meetingLink,
-                trackerFullName);
+                "tracker", TEST_TEAM_NAME, TEST_STREAM_NAME, TEST_MEETING_LINK, "Петров Петр Петрович");
 
-        // Assert
         verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
 
     @Test
     void sendMeetingNotHappenedNotification_userIsEmpty() {
-        // Arrange
-        String teamCardUsername = "";
-        String teamCardName = "test team";
-        String streamName = "test stream";
-        String meetingLink = "test link";
-        
         MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
 
         NotificationService notificationService = new NotificationServiceImpl(
-                userRepository,
-                appProperties,
-                emailService);
+                userRepository, appProperties, emailService);
 
-        // Act & Assert
         assertThrows(NoSuchElementException.class,
                 () -> notificationService.sendMeetingNotHappenedNotification(
-                        teamCardUsername,
-                        teamCardName,
-                        streamName,
-                        meetingLink,
-                        null));
+                        "", TEST_TEAM_NAME, TEST_STREAM_NAME, TEST_MEETING_LINK, null));
+    }
+
+    @Test
+    void sendMeetingNotHappenedNotification_withNullTrackerFullName() {
+        MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
+        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationService notificationService = new NotificationServiceImpl(
+                userRepository, appProperties, emailService);
+
+        notificationService.sendMeetingNotHappenedNotification(
+                "admin", TEST_TEAM_NAME, TEST_STREAM_NAME, TEST_MEETING_LINK, null);
+
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
 
     @Test
@@ -117,11 +106,38 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
 
         NotificationService notificationService = new NotificationServiceImpl(
-                userRepository,
-                appProperties,
-                emailService);
+                userRepository, appProperties, emailService);
 
         notificationService.sendTeamCardSummary(teamCardSummaryEvents);
+
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
+    }
+
+    @Test
+    void sendTeamCardSummary_multipleStreams_sorted() {
+        LinkedHashMap<String, String> event1 = new LinkedHashMap<>();
+        event1.put("streamName", "Поток A");
+        event1.put("teamCardName", "AAA Team");
+        event1.put("trackerFullName", "Иванов Иван");
+        event1.put("meetingNumber", "1");
+        event1.put("meetingLink", "http://example.com/1");
+
+        LinkedHashMap<String, String> event2 = new LinkedHashMap<>();
+        event2.put("streamName", "Поток A");
+        event2.put("teamCardName", "BBB Team");
+        event2.put("trackerFullName", "Петров Петр");
+        event2.put("meetingNumber", "2");
+        event2.put("meetingLink", "http://example.com/2");
+
+        List<LinkedHashMap<String, String>> events = List.of(event2, event1);
+
+        MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
+        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationService notificationService = new NotificationServiceImpl(
+                userRepository, appProperties, emailService);
+
+        notificationService.sendTeamCardSummary(events);
 
         verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
@@ -140,9 +156,7 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
 
         NotificationService notificationService = new NotificationServiceImpl(
-                userRepository,
-                appProperties,
-                emailService);
+                userRepository, appProperties, emailService);
 
         notificationService.sendTeamCardLowGradeSummary(teamCardLowGradeSummaryEvents);
 

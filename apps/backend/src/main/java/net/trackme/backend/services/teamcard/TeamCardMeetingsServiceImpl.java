@@ -119,19 +119,18 @@ public class TeamCardMeetingsServiceImpl implements TeamCardMeetingsService {
 
         if (removed) {
             log.debug("Removed meeting grade for meeting {} from team card {}",
-                     meetingId, teamCardId);
+                    meetingId, teamCardId);
+            teamCard.setMeetingsCount(Math.max(0, teamCard.getMeetingsCount() - 1));
+            calculateAverageGrade(teamCard);
+            teamCardsRepository.saveAndFlush(teamCard);
+            log.info("Team card {} updated after meeting {} deletion. "
+                    + "Remaining meetings: {}, New average grade: {}",
+                    teamCardId, meetingId, teamCard.getMeetingsCount(),
+                    teamCard.getAverageGrade());
+        } else {
+            log.warn("Meeting grade for meeting {} not found in team card {}",
+                    meetingId, teamCardId);
         }
-
-        teamCard.setMeetingsCount(Math.max(0, teamCard.getMeetingsCount() - 1));
-
-        calculateAverageGrade(teamCard);
-
-        teamCardsRepository.saveAndFlush(teamCard);
-
-        log.info("Team card {} updated after meeting {} deletion. "
-                + "Remaining meetings: {}, New average grade: {}",
-                teamCardId, meetingId, teamCard.getMeetingsCount(),
-                teamCard.getAverageGrade());
     }
 
     private void calculateAverageGrade(TeamCard teamCard) {
