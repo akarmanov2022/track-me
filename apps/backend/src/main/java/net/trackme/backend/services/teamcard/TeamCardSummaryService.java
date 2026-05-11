@@ -13,12 +13,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
+/**
+ * Сервис для формирования сводок по карточкам команд.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TeamCardSummaryService {
+
     /**
      * Низкий рейтинг.
      */
@@ -52,6 +60,7 @@ public class TeamCardSummaryService {
 
     /**
      * Отправить сводку о командах с пропущенными встречами.
+     *
      * @param meetingSummaryEvents Событие пропущенных встреч
      */
     public void sendTeamCardsSummary(
@@ -60,12 +69,13 @@ public class TeamCardSummaryService {
 
         for (var meetingSummaryEvent : meetingSummaryEvents) {
             var teamCardId = UUID.fromString(meetingSummaryEvent.get("teamCardId"));
-            
+
             try {
                 var teamCard = teamCardsService.getTeamCard(teamCardId);
                 getStreamByTeamCard(teamCard).ifPresentOrElse(stream -> {
-                    String trackerFullName = meetingSummaryEvent.getOrDefault("trackerFullName", "Не назначен");
-                    
+                    String trackerFullName = meetingSummaryEvent.getOrDefault(
+                            "trackerFullName", "Не назначен");
+
                     TeamCardSummaryEvent teamCardSummaryEvent =
                             TeamCardSummaryEvent.builder()
                                     .teamCardName(teamCard.getName())
@@ -90,15 +100,18 @@ public class TeamCardSummaryService {
         teamCardEventsProducer.sendTeamCardSummaryEvent(teamCardSummaryEvents);
     }
 
+    /**
+     * Отправляет сводку о командах с низким рейтингом.
+     */
     private void sendTeamCardLowGradeSummary() {
         List<TeamCardLowGradeSummaryEvent> teamCardLowGradeSummaryEvents = new ArrayList<>();
-        
+
         var teamCards = teamCardsRepository.findAll().stream()
                 .filter(teamCard -> teamCard.getAverageGrade()
                         .compareTo(BigDecimal.valueOf(LOW_GRADE)) <= 0)
                 .toList();
-        
-        log.info("Found {} team cards with low grade", teamCards.size()); 
+
+        log.info("Found {} team cards with low grade", teamCards.size());
 
         if (teamCards.isEmpty()) {
             log.info("No team cards with low grade");
@@ -108,15 +121,16 @@ public class TeamCardSummaryService {
         for (var teamCard : teamCards) {
             log.info("Processing teamCard: name={}, avgGrade={}, trackerFullName={}",
                 teamCard.getName(), teamCard.getAverageGrade(), teamCard.getTrackerFullName());
-            
+
             getStreamByTeamCard(teamCard).ifPresentOrElse(stream -> {
-                String trackerFullName = teamCard.getTrackerFullName() != null 
-                        ? teamCard.getTrackerFullName() 
+                String trackerFullName = teamCard.getTrackerFullName() != null
+                        ? teamCard.getTrackerFullName()
                         : "Не назначен";
-                
+
                 log.info("Adding to summary: stream={}, team={}, tracker={}, grade={}",
-                    stream.getName(), teamCard.getName(), trackerFullName, teamCard.getAverageGrade());
-                
+                    stream.getName(), teamCard.getName(), trackerFullName,
+                    teamCard.getAverageGrade());
+
                 TeamCardLowGradeSummaryEvent event = TeamCardLowGradeSummaryEvent.builder()
                         .teamCardName(teamCard.getName())
                         .streamName(stream.getName())
@@ -138,6 +152,12 @@ public class TeamCardSummaryService {
         teamCardEventsProducer.sendTeamCardLowGradeSummaryEvent(teamCardLowGradeSummaryEvents);
     }
 
+    /**
+     * Получает активный поток для карточки команды.
+     *
+     * @param teamCard карточка команды
+     * @return Optional с активным потоком или пустой Optional
+     */
     private Optional<Stream> getStreamByTeamCard(TeamCard teamCard) {
         return teamCard.getStreams().stream().filter(Stream::isActive).findFirst();
     }

@@ -2,7 +2,9 @@ package net.trackme.sso.controller.impl;
 
 import net.trackme.sso.AbstractIntegrationTest;
 import net.trackme.sso.config.security.SecurityConfiguration;
+import net.trackme.sso.dao.entity.UserEntity;
 import net.trackme.sso.services.UserService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -11,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -28,6 +31,20 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
 
   @Autowired
   private UserService userService;
+
+  @BeforeEach
+  void setUp() {
+    try {
+      UserEntity tracker = userService.findByUsername("tracker");
+      if (tracker != null) {
+        userService.disableUser("tracker");
+        if (!tracker.getAccountNonLocked()) {
+          userService.unlockUser("tracker");
+        }
+      }
+    } catch (Exception e) {
+    }
+  }
 
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
@@ -88,6 +105,8 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
 
     assertThat(userService.findByUsername("tracker").getAccountNonLocked())
         .isFalse();
+
+    userService.enableUser("tracker");
   }
 
   @Test
@@ -144,7 +163,10 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
             .with(csrf()))
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "application/json"))
-        .andExpect(jsonPath("$.content[0].username").value("tracker"));
+        .andExpect(jsonPath("$.content[*].username").value(hasItem("tracker")))
+        .andExpect(jsonPath("$.content[*].username").value(hasItem("ronin")))
+        .andExpect(jsonPath("$.content.length()").value(2))
+        .andExpect(jsonPath("$.page.totalElements").value(2));
   }
 
   @Test

@@ -10,16 +10,30 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Потребитель событий TeamCard из Kafka.
+ * Обрабатывает обновления карточек команд и привязку к потокам.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TeamCardEventConsumer {
 
+    /**
+     * Репозиторий для операций с метаданными встреч.
+     */
     private final MeetingMetadataRepository metadataRepository;
+
+    /**
+     * Клиент для API SSO для получения информации о пользователях.
+     */
     private final SsoApiClient ssoApiClient;
 
     /**
-     * Обрабатывает изменение названия команды или смену трекера.
+     * Обрабатывает обновление карточки команды.
+     * Обновляет название команды и информацию о трекере.
+     *
+     * @param event событие обновления карточки команды, содержащее новое название и данные трекера
      */
     @Transactional
     @KafkaListener(topics = "team-card-updated")
@@ -59,7 +73,9 @@ public class TeamCardEventConsumer {
     }
 
     /**
-     * Обрабатывает добавление привязки команды к потоку.
+     * Обрабатывает добавление привязки потока к карточке команды.
+     *
+     * @param event событие добавления потока, содержащее ID потока и ID карточки команды
      */
     @Transactional
     @KafkaListener(topics = "team-card-stream-added")
@@ -69,7 +85,9 @@ public class TeamCardEventConsumer {
     }
 
     /**
-     * Обрабатывает удаление привязки команды к потоку.
+     * Обрабатывает удаление привязки потока от карточки команды.
+     *
+     * @param event событие удаления потока, содержащее ID потока и ID карточки команды
      */
     @Transactional
     @KafkaListener(topics = "team-card-stream-removed")

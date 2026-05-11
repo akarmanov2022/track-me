@@ -17,9 +17,13 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+/**
+ * Конфигурация Kafka потребителей.
+ */
 @EnableKafka
 @Configuration
 public class KafkaConsumerConfiguration {
+
     @Bean
     ConsumerFactory<String, MeetingCreatedEvent> meetingCreatedEventConsumerFactory(
             KafkaProperties kafkaProperties) {
@@ -32,14 +36,14 @@ public class KafkaConsumerConfiguration {
         return new DefaultKafkaConsumerFactory<>(
                 props,
                 new StringDeserializer(),
-                new JsonDeserializer<>(MeetingCreatedEvent.class, false)
-        );
+                new JsonDeserializer<>(MeetingCreatedEvent.class, false));
     }
 
     @Bean
-    ConcurrentKafkaListenerContainerFactory<String, MeetingCreatedEvent> meetingCreatedListenerContainerFactory(
-            ConsumerFactory<String, MeetingCreatedEvent> meetingCreatedEventConsumerFactory
-    ) {
+    ConcurrentKafkaListenerContainerFactory<String, MeetingCreatedEvent>
+            meetingCreatedListenerContainerFactory(
+                    ConsumerFactory<String, MeetingCreatedEvent>
+                            meetingCreatedEventConsumerFactory) {
         var factory = new ConcurrentKafkaListenerContainerFactory<String, MeetingCreatedEvent>();
         factory.setConsumerFactory(meetingCreatedEventConsumerFactory);
         return factory;
@@ -57,14 +61,14 @@ public class KafkaConsumerConfiguration {
         return new DefaultKafkaConsumerFactory<>(
                 props,
                 new StringDeserializer(),
-                new JsonDeserializer<>(MeetingUpdatedEvent.class, false)
-        );
+                new JsonDeserializer<>(MeetingUpdatedEvent.class, false));
     }
 
     @Bean
-    ConcurrentKafkaListenerContainerFactory<String, MeetingUpdatedEvent> meetingUpdatedListenerContainerFactory(
-            ConsumerFactory<String, MeetingUpdatedEvent> meetingUpdatedEventConsumerFactory
-    ) {
+    ConcurrentKafkaListenerContainerFactory<String, MeetingUpdatedEvent>
+            meetingUpdatedListenerContainerFactory(
+                    ConsumerFactory<String, MeetingUpdatedEvent>
+                            meetingUpdatedEventConsumerFactory) {
         var factory = new ConcurrentKafkaListenerContainerFactory<String, MeetingUpdatedEvent>();
         factory.setConsumerFactory(meetingUpdatedEventConsumerFactory);
         return factory;
@@ -82,21 +86,22 @@ public class KafkaConsumerConfiguration {
         return new DefaultKafkaConsumerFactory<>(
                 props,
                 new StringDeserializer(),
-                new JsonDeserializer<>(MeetingDeletedEvent.class, false)
-        );
+                new JsonDeserializer<>(MeetingDeletedEvent.class, false));
     }
 
     @Bean
-    ConcurrentKafkaListenerContainerFactory<String, MeetingDeletedEvent> meetingDeletedListenerContainerFactory(
-            ConsumerFactory<String, MeetingDeletedEvent> meetingDeletedEventConsumerFactory) {
+    ConcurrentKafkaListenerContainerFactory<String, MeetingDeletedEvent>
+            meetingDeletedListenerContainerFactory(
+                    ConsumerFactory<String, MeetingDeletedEvent>
+                            meetingDeletedEventConsumerFactory) {
         var factory = new ConcurrentKafkaListenerContainerFactory<String, MeetingDeletedEvent>();
         factory.setConsumerFactory(meetingDeletedEventConsumerFactory);
-        return factory; 
+        return factory;
     }
 
     @Bean
-    ConsumerFactory<String, List<LinkedHashMap<String, String>>> meetingSummaryEventConsumerFactory(
-            KafkaProperties kafkaProperties) {
+    ConsumerFactory<String, List<LinkedHashMap<String, String>>>
+            meetingSummaryEventConsumerFactory(KafkaProperties kafkaProperties) {
         var props = kafkaProperties.buildConsumerProperties(null);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
@@ -105,15 +110,16 @@ public class KafkaConsumerConfiguration {
         return new DefaultKafkaConsumerFactory<>(
                 props,
                 new StringDeserializer(),
-                new JsonDeserializer<>(List.class, false)
-        );
+                new JsonDeserializer<>(List.class, false));
     }
 
     @Bean
-    ConcurrentKafkaListenerContainerFactory<String, List<LinkedHashMap<String, String>>> meetingSummaryListenerContainerFactory(
-            ConsumerFactory<String, List<LinkedHashMap<String, String>>> meetingSummaryEventConsumerFactory
-    ) {
-        var factory = new ConcurrentKafkaListenerContainerFactory<String, List<LinkedHashMap<String, String>>>();
+    ConcurrentKafkaListenerContainerFactory<String, List<LinkedHashMap<String, String>>>
+            meetingSummaryListenerContainerFactory(
+                    ConsumerFactory<String, List<LinkedHashMap<String, String>>>
+                            meetingSummaryEventConsumerFactory) {
+        var factory = new ConcurrentKafkaListenerContainerFactory
+                <String, List<LinkedHashMap<String, String>>>();
         factory.setConsumerFactory(meetingSummaryEventConsumerFactory);
         return factory;
     }

@@ -26,18 +26,20 @@ import static net.trackme.backend.models.UserRole.*;
 public class SecurityConfiguration {
 
     /**
-     * Устонавливает фильтры безопасности.
+     * Устанавливает фильтры безопасности.
      *
      * @param http объект {@link HttpSecurity}
      * @return объект {@link SecurityFilterChain}
-     * @throws Exception возможное исключение.
+     * @throws Exception возможное исключение
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(AbstractHttpConfigurer::disable)
                 .csrf(csrf -> csrf
-                    .ignoringRequestMatchers("/api/v1/admin/team-cards/by-user", "/api/v1/admin/team-cards/reassign")
+                    .ignoringRequestMatchers(
+                        "/api/v1/admin/team-cards/by-user",
+                        "/api/v1/admin/team-cards/reassign")
                 )
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/api/v1/auth/**").permitAll()
@@ -49,37 +51,46 @@ public class SecurityConfiguration {
                                 "/v3/api-docs.yaml/**",
                                 "/api/v1/users/register",
                                 "/v3/api-docs.yaml").permitAll()
-                        .requestMatchers("/api/v1/admin/team-cards/by-user", "/api/v1/admin/team-cards/reassign").permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasRole(ADMIN.toString())
-                        .requestMatchers("/api/v1/**").hasRole(TRACKER.toString())
-                        .requestMatchers("/api/v1/super-admin/**").hasRole(SUPER_ADMIN.toString())
+                        .requestMatchers(
+                                "/api/v1/admin/team-cards/by-user",
+                                "/api/v1/admin/team-cards/reassign").permitAll()
+                        .requestMatchers("/api/v1/admin/**")
+                                .hasRole(ADMIN.toString())
+                        .requestMatchers("/api/v1/**")
+                                .hasRole(TRACKER.toString())
+                        .requestMatchers("/api/v1/super-admin/**")
+                                .hasRole(SUPER_ADMIN.toString())
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .oauth2ResourceServer(rs ->
-                        rs.jwt(jwt -> jwt.jwtAuthenticationConverter(
-                                jwtAuthenticationConverter())));
+                .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt
+                        .jwtAuthenticationConverter(jwtAuthenticationConverter())));
         return http.build();
     }
 
     /**
      * Конструирует {@link RoleHierarchy}.
      *
-     * @return Иерархия ролей.
+     * @return иерархия ролей
      */
     @Bean
     public RoleHierarchy roleHierarchy() {
-        String hierarchy = "ROLE_SUPER_ADMIN > ROLE_ADMIN\n" +
-                           "ROLE_ADMIN > ROLE_TRACKER";
+        String hierarchy = "ROLE_SUPER_ADMIN > ROLE_ADMIN\n"
+                         + "ROLE_ADMIN > ROLE_TRACKER";
         return RoleHierarchyImpl.fromHierarchy(hierarchy);
     }
 
+    /**
+     * Создает конвертер для JWT аутентификации.
+     *
+     * @return конвертер JWT аутентификации
+     */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter =
                 new JwtGrantedAuthoritiesConverter();
-        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_"); // Добавляем префикс "ROLE_"
-        grantedAuthoritiesConverter.setAuthoritiesClaimName("roles"); // Читаем роли из "roles"
+        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+        grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
 
         JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
         jwtConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);

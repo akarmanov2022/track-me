@@ -75,15 +75,15 @@ public class MeetingSummaryService {
 
         List<MeetingSummaryEvent> meetingSummaryEvents = new ArrayList<>();
         for (Meeting meeting : meetings) {
-            String trackerFullName = meeting.getTrackerFullName() != null 
-                    ? meeting.getTrackerFullName() 
+            String trackerFullName = meeting.getTrackerFullName() != null
+                    ? meeting.getTrackerFullName()
                     : "Не назначен";
-            
+
             var meetingSummaryEvent = MeetingSummaryEvent.builder()
                     .meetingNumber(meeting.getNumber())
                     .meetingLink(getMeetingLink(meeting))
                     .teamCardId(meeting.getTeamCardId())
-                    .trackerFullName(trackerFullName)  
+                    .trackerFullName(trackerFullName)
                     .build();
 
             meetingSummaryEvents.add(meetingSummaryEvent);

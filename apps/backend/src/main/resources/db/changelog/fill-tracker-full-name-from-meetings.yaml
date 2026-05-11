@@ -2,6 +2,11 @@ databaseChangeLog:
   - changeSet:
       id: fill-tracker-full-name-20250105
       author: developer
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            schemaName: meeting_service
+            tableName: meeting
       changes:
         - sql:
             sql: >

@@ -10,4 +10,4 @@ public record MeetingDeletedEvent(
     UUID meetingId,
     UUID teamCardId,
     OffsetDateTime startDate
-) {}
+) { }

@@ -10,4 +10,4 @@ public record MeetingSummaryEvent(
         String meetingNumber,
         String meetingLink,
         String trackerFullName
-) {}
+) { }
