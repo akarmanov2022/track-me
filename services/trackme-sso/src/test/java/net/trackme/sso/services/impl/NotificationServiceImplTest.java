@@ -162,4 +162,51 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
 
         verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
+
+    @Test
+    void sendTeamCardSummary_emptyEvents_shouldStillCallSend() {
+        MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
+        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationService notificationService = new NotificationServiceImpl(
+                userRepository, appProperties, emailService);
+
+        notificationService.sendTeamCardSummary(List.of());
+
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
+    }
+
+    @Test
+    void sendTeamCardSummary_nullTrackerFullName_usesDefault() {
+        LinkedHashMap<String, String> event = new LinkedHashMap<>();
+        event.put("streamName", "Поток 1");
+        event.put("teamCardName", "Команда 1");
+        event.put("meetingNumber", "1");
+        event.put("meetingLink", "http://example.com/meeting/1");
+
+        List<LinkedHashMap<String, String>> events = List.of(event);
+
+        MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
+        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationService notificationService = new NotificationServiceImpl(
+                userRepository, appProperties, emailService);
+
+        notificationService.sendTeamCardSummary(events);
+
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
+    }
+
+    @Test
+    void sendTeamCardLowGradeSummary_emptyEvents_shouldStillCallSend() {
+        MimeMessage mimeMessage = new JavaMailSenderImpl().createMimeMessage();
+        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        NotificationService notificationService = new NotificationServiceImpl(
+                userRepository, appProperties, emailService);
+
+        notificationService.sendTeamCardLowGradeSummary(List.of());
+
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
+    }
 }
