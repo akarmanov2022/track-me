@@ -36,10 +36,14 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
         String teamCardName = "test team";
         String streamName = "test stream";
         String meetingLink = "test link";
+        String trackerFullName = "Петров Петр Петрович";
 
         chatService.createChat(chatId, teamCardUsername);
 
+        String shortName = getShortName(trackerFullName);
+
         var message = MessageTemplates.MEETING_NOT_HAPPENED_MESSAGE_TEMPLATE
+                .replace("{trackerFullName}", shortName)
                 .replace("{teamCardName}", teamCardName)
                 .replace("{streamName}", streamName)
                 .replace("{meetingLink}", meetingLink);
@@ -51,9 +55,21 @@ class NotificationServiceImplTest extends AbstractIntegrationTest {
                 teamCardUsername,
                 teamCardName,
                 streamName,
-                meetingLink);
+                meetingLink,
+                trackerFullName);
 
         // Assert
         verify(notificationBot).sendMessage(chatId, message);
+    }
+
+    private String getShortName(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return "Не указан";
+        }
+        String[] parts = fullName.trim().split(" ");
+        if (parts.length >= 2) {
+            return parts[0] + " " + parts[1];
+        }
+        return fullName;
     }
 }

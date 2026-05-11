@@ -18,10 +18,10 @@ spring:
     resources:
       static-locations: classpath:/META-INF/resources/, classpath:/resources/, classpath:/static/, classpath:/public/
   mail:
-    host: ${MAIL_HOST:localhost}
+    host: smtp.gmail.com
     port: ${MAIL_PORT:465}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: hanamino4321@gmail.com
+    password: wgzh gwga yaze lvna
     properties:
       mail:
         smtp:
@@ -30,11 +30,23 @@ spring:
             enable: true
           ssl:
             enable: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: trackme-sso
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: java.util.List
+    listener:
+      missing-topics-fatal: false
   config:
     import:
       - application-data.yaml
       - application-security.yaml
-
 springdoc:
   swagger-ui:
     enabled: false
@@ -54,10 +66,12 @@ app:
   telegram-url: ${TELEGRAM_URI:https://t.me}
   bot-username: ${TELEGRAM_BOT_USERNAME}
   mail:
-    from: ${MAIL_FROM}
+    from: hanamino4321@gmail.com
     subject: ${MAIL_SUBJECT}
     summarySendRoles: ${MAIL_SUMMARY_SEND_ROLES:ADMIN,SUPER_ADMIN}
-
+  services:
+    backend:
+      url: ${BACKEND_SERVICE_URL:http://trackme-backend:8080}
 
 registration-store:
   cookie-name: trackme-sso-temporary-session
@@ -71,6 +85,9 @@ spring:
       on-profile: docker-local
 app:
   api-url: ${BACKEND_URI:http://localhost}/sso
+  services:
+    backend:
+      url: ${BACKEND_SERVICE_URL:http://trackme-backend:8080}
 
 management:
   health:

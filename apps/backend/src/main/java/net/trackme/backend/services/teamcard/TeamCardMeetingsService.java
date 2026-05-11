@@ -9,6 +9,8 @@ import java.util.UUID;
 public interface TeamCardMeetingsService {
     void increaseMeetingCount(UUID teamCardId, UUID meetingId);
 
+    void handleMeetingDeleted(UUID teamCardId, UUID meetingId);
+
     void updateTeamCardInfo(UUID teamCardId, UUID uuid, MeetingStatus newStatus,
                             MeetingStatus oldStatus, TeamCardStatus teamCardStatus,
                             BigDecimal teamGrade, String meetingLink);

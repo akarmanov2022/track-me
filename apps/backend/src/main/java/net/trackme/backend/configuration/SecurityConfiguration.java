@@ -36,6 +36,9 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                    .ignoringRequestMatchers("/api/v1/admin/team-cards/by-user", "/api/v1/admin/team-cards/reassign")
+                )
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(
@@ -46,6 +49,7 @@ public class SecurityConfiguration {
                                 "/v3/api-docs.yaml/**",
                                 "/api/v1/users/register",
                                 "/v3/api-docs.yaml").permitAll()
+                        .requestMatchers("/api/v1/admin/team-cards/by-user", "/api/v1/admin/team-cards/reassign").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole(ADMIN.toString())
                         .requestMatchers("/api/v1/**").hasRole(TRACKER.toString())
                         .requestMatchers("/api/v1/super-admin/**").hasRole(SUPER_ADMIN.toString())

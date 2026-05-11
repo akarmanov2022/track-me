@@ -21,6 +21,7 @@
 
     import java.util.Collections;
     import java.util.UUID;
+    import java.util.List;  
 
     @Slf4j
     @Service
@@ -51,6 +52,9 @@
         @Override
         public TeamCard createTeamCard(TeamCard createTeamCard) {
             createTeamCard.setStatus(TeamCardStatus.OK);
+            if (createTeamCard.getTrackerFullName() == null) {
+                createTeamCard.setTrackerFullName(createTeamCard.getUsername());
+            }
             createTeamCard = teamCardsRepository.save(createTeamCard);
             var username = SecurityContextHolder.getContext().getAuthentication().getName();
             aclService.createAclForUser(createTeamCard, username);
@@ -67,7 +71,8 @@
             eventPublisher.publishEvent(new TeamCardChangedInternalEvent(
                 teamCardId,
                 teamCard.getName(),
-                teamCard.getUsername()
+                teamCard.getUsername(),
+                teamCard.getTrackerFullName()
             ));
 
             return teamCard;
@@ -96,6 +101,9 @@
         public TeamCard createTeamCard(TeamCard create, String username) {
             create.setUsername(username);
             create.setStatus(TeamCardStatus.OK);
+            if (create.getTrackerFullName() == null) {
+                create.setTrackerFullName(username);
+            }
             create = teamCardsRepository.save(create);
             aclService.createAclForUser(
                     create, username, SecurityContextHolder.getContext().getAuthentication().getName());
@@ -127,7 +135,8 @@
             eventPublisher.publishEvent(new TeamCardChangedInternalEvent(
                 teamCardId,
                 teamCard.getName(),
-                teamCard.getUsername()
+                teamCard.getUsername(),
+                teamCard.getTrackerFullName()
             ));
 
             return teamCard;
@@ -185,6 +194,9 @@
             if (source.getDescription() != null) {
                 target.setDescription(source.getDescription());
             }
+            if (source.getTrackerFullName() != null) {
+                target.setTrackerFullName(source.getTrackerFullName());
+            }
             if (source.getMeetingRoomLink() != null) {
                 target.setMeetingRoomLink(source.getMeetingRoomLink());
             }
@@ -197,5 +209,38 @@
             if (source.getReadinessLevel() != null) {
                 target.setReadinessLevel(source.getReadinessLevel());
             }
+        }
+
+        @Override
+        @Transactional
+        public List<String> getTeamCardNamesByUser(String username) {
+            List<TeamCard> teams = teamCardsRepository.findByUsername(username);
+            return teams.stream()
+                .map(TeamCard::getName)
+                .toList();
+        }
+
+        @Override
+        public List<TeamCard> getTeamCardsByUser(String username) {
+        return teamCardsRepository.findByUsername(username);
+        }
+
+        @Override
+        @Transactional
+        public void reassignTeams(String fromUsername, String toUsername) {
+            List<TeamCard> teams = teamCardsRepository.findByUsername(fromUsername);
+            log.info("Reassigning {} teams from '{}' to '{}'", teams.size(), fromUsername, toUsername);
+        
+            for (TeamCard team : teams) {
+                team.setUsername(toUsername);
+                eventPublisher.publishEvent(new TeamCardChangedInternalEvent(
+                    team.getId(),
+                    team.getName(),
+                    toUsername,
+                    team.getTrackerFullName()
+                ));
+            }
+
+            teamCardsRepository.saveAll(teams);
         }
     }

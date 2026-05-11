@@ -101,4 +101,22 @@ public interface TeamCardsService {
      * @return Количество команд в потоке
      */
     Integer getTeamCardCount(UUID streamId);
+
+    // НОВЫЕ МЕТОДЫ
+    
+    /**
+     * Получить список названий команд пользователя.
+     * @param username Имя пользователя
+     * @return Список названий команд
+     */
+    List<String> getTeamCardNamesByUser(String username);
+
+    /**
+     * Переназначить все команды с одного пользователя на другого.
+     * @param fromUsername Исходный пользователь
+     * @param toUsername Целевой пользователь
+     */
+    void reassignTeams(String fromUsername, String toUsername);
+
+    List<TeamCard> getTeamCardsByUser(String username);
 }
