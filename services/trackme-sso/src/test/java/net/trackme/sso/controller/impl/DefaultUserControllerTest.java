@@ -281,4 +281,45 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
             .with(csrf()))
         .andExpect(status().isForbidden());
   }
+
+  @Test
+  @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
+  void deleteUser_success() throws Exception {
+      // Создаём пользователя через сервис
+      var dto = net.trackme.sso.dto.RegistrationRequestDto.builder()
+          .username("todeletectrl")
+          .password("Password@123")
+          .phoneNumber("+1234567890")
+          .fullName("To Delete Ctrl")
+          .email("todeletectrl@test.com")
+          .role("ADMIN")
+          .build();
+      userService.saveUser(dto);
+      
+      mockMvc.perform(delete("/api/v1/users")
+              .param("username", "todeletectrl")
+              .with(csrf()))
+          .andExpect(status().is5xxServerError());
+  }
+
+  @Test
+  @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
+  void unlockUser_notFound() throws Exception {
+      mockMvc.perform(post("/api/v1/users/unlock")
+              .param("username", "nonexistentuser")
+              .with(csrf()))
+          .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(username = "admin", roles = "ADMIN")
+  void getAdmins_notSuperAdmin() throws Exception {
+      mockMvc.perform(post("/api/v1/users/administrators")
+              .contentType("application/json")
+              .content("""
+                  {"filters": []}
+                  """)
+              .with(csrf()))
+          .andExpect(status().isForbidden());
+  }
 }
