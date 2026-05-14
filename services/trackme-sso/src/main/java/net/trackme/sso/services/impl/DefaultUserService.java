@@ -152,7 +152,15 @@ public class DefaultUserService implements UserService {
           checkSuperAdmin();
       }
       var userEntity = findByUsername(username);
-      reassignTeamsToRonin(username);
+      
+      // Пытаемся переназначить команды, но не блокируем удаление при ошибке
+      try {
+          reassignTeamsToRonin(username);
+      } catch (Exception e) {
+          log.error("Failed to reassign teams from {} to ronin, but proceeding with deletion: {}", 
+                    username, e.getMessage());
+      }
+      
       userRepository.delete(userEntity);
       log.info("User {} deleted", username);
   }
@@ -230,23 +238,23 @@ public class DefaultUserService implements UserService {
       }
   }
 
-    private void reassignTeamsToRonin(String username) {
+  private void reassignTeamsToRonin(String username) {
     try {
-      RestClient restClient = RestClient.create(backendServiceUrl);
-      Map<String, String> request = Map.of(
-          "fromUsername", username,
-          "toUsername", RONIN
-      );
-      restClient.post()
-          .uri("/api/v1/admin/team-cards/reassign")
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(request)
-          .retrieve()
-          .toBodilessEntity();
-      log.info("Teams reassigned from {} to ronin", username);
+        RestClient restClient = RestClient.create(backendServiceUrl);
+        Map<String, String> request = Map.of(
+            "fromUsername", username,
+            "toUsername", RONIN
+        );
+        restClient.post()
+            .uri("/api/v1/admin/team-cards/reassign")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(request)
+            .retrieve()
+            .toBodilessEntity();
+        log.info("Teams reassigned from {} to ronin", username);
     } catch (Exception e) {
-      log.error("Error reassigning teams: {}", e.getMessage());
-      throw new IllegalStateException("Failed to reassign teams: " + e.getMessage(), e);
+        log.error("Error reassigning teams from {} to ronin: {}", username, e.getMessage());
+        // Не бросаем исключение, чтобы не блокировать удаление пользователя
     }
   }
 }

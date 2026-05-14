@@ -253,6 +253,7 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
     @Test
     @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
     void deleteUser_success() {
+        // Создаём пользователя
         var dto = RegistrationRequestDto.builder()
             .username("todelete")
             .password("Password@123")
@@ -262,7 +263,15 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
             .role(ADMIN_ROLE)
             .build();
         userService.saveUser(dto);
-        assertThrows(Exception.class, () -> userService.deleteUser("todelete"));
+        
+        // Проверяем, что пользователь создан
+        assertDoesNotThrow(() -> userService.findByUsername("todelete"));
+        
+        // Удаляем пользователя - не должно быть исключений
+        assertDoesNotThrow(() -> userService.deleteUser("todelete"));
+        
+        // Проверяем, что пользователь действительно удалён
+        assertThrows(Exception.class, () -> userService.findByUsername("todelete"));
     }
 
     @Test

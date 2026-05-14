@@ -18,10 +18,10 @@ spring:
     resources:
       static-locations: classpath:/META-INF/resources/, classpath:/resources/, classpath:/static/, classpath:/public/
   mail:
-    host: smtp.gmail.com
+    host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:465}
-    username: hanamino4321@gmail.com
-    password: wgzh gwga yaze lvna
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -38,9 +38,6 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
-        spring.json.value.default.type: java.util.List
     listener:
       missing-topics-fatal: false
   config:
@@ -66,7 +63,7 @@ app:
   telegram-url: ${TELEGRAM_URI:https://t.me}
   bot-username: ${TELEGRAM_BOT_USERNAME}
   mail:
-    from: hanamino4321@gmail.com
+    from: ${MAIL_FROM}
     subject: ${MAIL_SUBJECT}
     summarySendRoles: ${MAIL_SUMMARY_SEND_ROLES:ADMIN,SUPER_ADMIN}
   services:

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import net.trackme.backend.rest.api.teamcard.dto.TeamCardCreateDto;
 import net.trackme.backend.rest.api.teamcard.dto.TeamCardDto;
 import net.trackme.backend.rest.api.teamcard.dto.TeamCardUpdateDto;
@@ -25,6 +26,20 @@ import java.util.Map;
 @RequestMapping("/api/v1/admin")
 @Validated
 public interface TeamCardsAdminRestController {
+  
+  /**
+   * DTO для запроса переназначения команд.
+   */
+  record ReassignTeamsRequest(
+      @NotBlank(message = "fromUsername не может быть пусто")
+      String fromUsername,
+      
+      @NotBlank(message = "toUsername не может быть пусто")
+      String toUsername,
+      
+      String toUserFullName
+  ) {}
+
   @PostMapping(value = "team-card",
                consumes = "application/json",
                produces = "application/json")
@@ -71,10 +86,12 @@ public interface TeamCardsAdminRestController {
 
   @GetMapping("team-cards/by-user")
   @Operation(summary = "Получить список команд пользователя")
-  ResponseEntity<List<Map<String, String>>> getTeamsByUser(@RequestParam String username);
+  ResponseEntity<List<Map<String, String>>> getTeamsByUser(
+      @Parameter(description = "Имя пользователя")
+      @RequestParam String username);
 
   @PostMapping("team-cards/reassign")
   @Operation(summary = "Переназначить команды с одного пользователя на другого")
-  ResponseEntity<Void> reassignTeams(@RequestBody Map<String, String> request);
-  
+  ResponseEntity<Void> reassignTeams(
+      @Valid @RequestBody ReassignTeamsRequest request);
 }

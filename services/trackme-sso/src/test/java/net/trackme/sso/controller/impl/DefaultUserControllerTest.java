@@ -13,6 +13,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
@@ -285,21 +286,28 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void deleteUser_success() throws Exception {
-      // Создаём пользователя через сервис
-      var dto = net.trackme.sso.dto.RegistrationRequestDto.builder()
-          .username("todeletectrl")
-          .password("Password@123")
-          .phoneNumber("+1234567890")
-          .fullName("To Delete Ctrl")
-          .email("todeletectrl@test.com")
-          .role("ADMIN")
-          .build();
-      userService.saveUser(dto);
-      
-      mockMvc.perform(delete("/api/v1/users")
-              .param("username", "todeletectrl")
-              .with(csrf()))
-          .andExpect(status().is5xxServerError());
+        // Создаём пользователя через сервис
+        var dto = net.trackme.sso.dto.RegistrationRequestDto.builder()
+            .username("todeletectrl")
+            .password("Password@123")
+            .phoneNumber("+1234567890")
+            .fullName("To Delete Ctrl")
+            .email("todeletectrl@test.com")
+            .role("ADMIN")
+            .build();
+        userService.saveUser(dto);
+        
+        // Проверяем, что пользователь создан
+        assertThat(userService.findByUsername("todeletectrl")).isNotNull();
+        
+        mockMvc.perform(delete("/api/v1/users")
+                .param("username", "todeletectrl")
+                .with(csrf()))
+            .andExpect(status().isOk());  // или .isNoContent() в зависимости от API
+        
+        // Проверяем, что пользователь действительно удалён
+        assertThatThrownBy(() -> userService.findByUsername("todeletectrl"))
+            .isInstanceOf(UsernameNotFoundException.class);
   }
 
   @Test

@@ -39,6 +39,7 @@ public class SecurityConfiguration {
         http
                 .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
+                        // Публичные эндпоинты без аутентификации
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(
                                 "/swagger-ui/**",
@@ -46,17 +47,25 @@ public class SecurityConfiguration {
                                 "/actuator/**",
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml/**",
-                                "/api/v1/users/register",
-                                "/v3/api-docs.yaml").permitAll()
-                        .requestMatchers(
-                                "/api/v1/admin/team-cards/by-user",
-                                "/api/v1/admin/team-cards/reassign").permitAll()
+                                "/api/v1/users/register").permitAll()
+                        
+                        // Admin эндпоинты требуют ADMIN/SUPER_ADMIN роль
+                        .requestMatchers("/api/v1/admin/team-cards/by-user")
+                                .hasAnyRole(ADMIN.toString(), SUPER_ADMIN.toString())
+                        .requestMatchers("/api/v1/admin/team-cards/reassign")
+                                .hasAnyRole(ADMIN.toString(), SUPER_ADMIN.toString())
                         .requestMatchers("/api/v1/admin/**")
-                                .hasRole(ADMIN.toString())
+                                .hasAnyRole(ADMIN.toString(), SUPER_ADMIN.toString())
+                        
+                        // Обычные tracker эндпоинты
                         .requestMatchers("/api/v1/**")
                                 .hasRole(TRACKER.toString())
+                        
+                        // Super admin эндпоинты
                         .requestMatchers("/api/v1/super-admin/**")
                                 .hasRole(SUPER_ADMIN.toString())
+                        
+                        // Всё остальное требует аутентификации
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

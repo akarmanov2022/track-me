@@ -103,11 +103,25 @@ public class TeamCardsAdminRestControllerImpl implements TeamCardsAdminRestContr
 
   @Override
   @Transactional
-  public ResponseEntity<Void> reassignTeams(Map<String, String> request) {
-    String fromUsername = request.get("fromUsername");
-    String toUsername = request.get("toUsername");
-    log.info("Reassigning all teams from {} to {}", fromUsername, toUsername);
-    teamCardsService.reassignTeams(fromUsername, toUsername);
+  public ResponseEntity<Void> reassignTeams(TeamCardsAdminRestController.ReassignTeamsRequest request) {
+    String fromUsername = request.fromUsername().trim();
+    String toUsername = request.toUsername().trim();
+    String toUserFullName = (request.toUserFullName() != null) 
+        ? request.toUserFullName().trim() 
+        : null;
+    
+    // Проверка на совпадение usernames
+    if (fromUsername.equals(toUsername)) {
+      log.warn("Attempted reassign with identical usernames: {}", fromUsername);
+      return ResponseEntity.badRequest().build();
+    }
+    
+    log.info("Reassigning all teams from '{}' to '{}' with fullName: '{}'", 
+        fromUsername, toUsername, toUserFullName);
+    
+    teamCardsService.reassignTeams(fromUsername, toUsername, toUserFullName);
+    
+    log.info("Successfully reassigned teams from '{}' to '{}'", fromUsername, toUsername);
     return ResponseEntity.ok().build();
   }
 }
