@@ -261,7 +261,7 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @WithMockUser(value = "superadmin", roles = {"SUPER_ADMIN"})
+    @WithMockUser(roles = "ADMIN")   // заменили SUPER_ADMIN на ADMIN
     void updateMeeting_completedMeeting_failure() throws Exception {
         var meeting = meetingRepository.findAll().getFirst();
         meeting.setStatus(MeetingStatus.COMPLETED_AS_NOT_HAPPENED);
