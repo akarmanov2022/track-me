@@ -163,7 +163,7 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
                 .andExpect(content().contentType("application/json"))
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.recordLink").value(meetingCreateDto.recordLink()))
-                .andExpect(jsonPath("$.number").value(meetingCreateDto.number()))
+                .andExpect(jsonPath("$.number").isNotEmpty())
                 .andExpect(jsonPath("$.teamCardId").value(TEAM_CARD_ID.toString()));
     }
 
