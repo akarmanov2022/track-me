@@ -487,4 +487,90 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
                 .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .andExpect(content().bytes("fake-excel-content".getBytes()));
     }
+
+        @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void updateMeeting_superAdmin_updatesFinallyCompletedMeeting() throws Exception {
+        // Создаём встречу со статусом FINALLY_COMPLETED
+        var meeting = Meeting.builder()
+                .teamCardId(TEAM_CARD_ID)
+                .status(MeetingStatus.FINALLY_COMPLETED)
+                .recordLink("https://example.com/old")
+                .number("999")
+                .startDate(OffsetDateTime.now().minusDays(1))
+                .build();
+        meeting = meetingRepository.save(meeting);
+
+        var updateDto = MeetingUpdateDto.builder()
+                .recordLink("https://example.com/new")
+                .number("1000")
+                .teamStatus(TeamStatus.OK)
+                .build();
+
+        mockMvc.perform(patch("/api/v1/update-meeting/" + meeting.getId())
+                        .param("teamCardId", TEAM_CARD_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(csrf())
+                        .content(objectMapper.writeValueAsString(updateDto)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recordLink").value("https://example.com/new"));
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void updateMeeting_superAdmin_updatesCompletedAsNotHappenedMeeting() throws Exception {
+        var meeting = Meeting.builder()
+                .teamCardId(TEAM_CARD_ID)
+                .status(MeetingStatus.COMPLETED_AS_NOT_HAPPENED)
+                .recordLink("https://example.com/old2")
+                .number("998")
+                .startDate(OffsetDateTime.now().minusDays(2))
+                .build();
+        meeting = meetingRepository.save(meeting);
+
+        var updateDto = MeetingUpdateDto.builder()
+                .recordLink("https://example.com/new2")
+                .number("1001")
+                .teamStatus(TeamStatus.OK)
+                .build();
+
+        mockMvc.perform(patch("/api/v1/update-meeting/" + meeting.getId())
+                        .param("teamCardId", TEAM_CARD_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(csrf())
+                        .content(objectMapper.writeValueAsString(updateDto)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recordLink").value("https://example.com/new2"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateMeeting_regularAdmin_cannotUpdateFinallyCompletedMeeting() throws Exception {
+        var meeting = Meeting.builder()
+                .teamCardId(TEAM_CARD_ID)
+                .status(MeetingStatus.FINALLY_COMPLETED)
+                .recordLink("https://example.com/forbidden")
+                .number("997")
+                .startDate(OffsetDateTime.now().minusDays(3))
+                .build();
+        meeting = meetingRepository.save(meeting);
+
+        var updateDto = MeetingUpdateDto.builder()
+                .recordLink("https://example.com/hacked")
+                .build();
+
+        mockMvc.perform(patch("/api/v1/update-meeting/" + meeting.getId())
+                        .param("teamCardId", TEAM_CARD_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(csrf())
+                        .content(objectMapper.writeValueAsString(updateDto)))
+                .andDo(print())
+                .andExpect(status().isBadRequest()); // должно вернуть 400 (MeetingCompletedException)
+    }
+
+
+
+
 }
