@@ -38,7 +38,6 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -98,7 +97,6 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
     @BeforeEach
     @WithMockUser(value = "superadmin", roles = {"SUPER_ADMIN"})
     void setUp() {
-
         meetingRepository.save(Meeting.builder()
                 .teamCardId(TEAM_CARD_ID)
                 .recordLink("https://example.com/meeting")
@@ -137,7 +135,6 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
 
         when(userBackendApiClient.getTeamCardById(TEAM_CARD_ID)).thenReturn(mockTeamCard);
         when(ssoApiClient.getTrackers()).thenReturn(List.of(mockTracker));
-
     }
 
     @AfterEach
@@ -261,7 +258,7 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")   // заменили SUPER_ADMIN на ADMIN
+    @WithMockUser(roles = "ADMIN")
     void updateMeeting_completedMeeting_failure() throws Exception {
         var meeting = meetingRepository.findAll().getFirst();
         meeting.setStatus(MeetingStatus.COMPLETED_AS_NOT_HAPPENED);
@@ -488,10 +485,11 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
                 .andExpect(content().bytes("fake-excel-content".getBytes()));
     }
 
-        @Test
+    // ========== НОВЫЕ ТЕСТЫ ДЛЯ ПОКРЫТИЯ РЕДАКТИРОВАНИЯ СУПЕРАДМИНОМ ==========
+
+    @Test
     @WithMockUser(roles = "SUPER_ADMIN")
     void updateMeeting_superAdmin_updatesFinallyCompletedMeeting() throws Exception {
-        // Создаём встречу со статусом FINALLY_COMPLETED
         var meeting = Meeting.builder()
                 .teamCardId(TEAM_CARD_ID)
                 .status(MeetingStatus.FINALLY_COMPLETED)
@@ -567,10 +565,9 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
                         .with(csrf())
                         .content(objectMapper.writeValueAsString(updateDto)))
                 .andDo(print())
-                .andExpect(status().isBadRequest()); // должно вернуть 400 (MeetingCompletedException)
+                .andExpect(status().isBadRequest());
     }
 
 
-
-
+    
 }
