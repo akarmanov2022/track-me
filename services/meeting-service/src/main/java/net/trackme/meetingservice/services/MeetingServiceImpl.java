@@ -50,8 +50,6 @@ import static java.util.stream.Collectors.toSet;
 import static net.trackme.meetingservice.entities.MeetingSpecification.meetingIdEquals;
 import static net.trackme.meetingservice.entities.MeetingSpecification.teamCardIdEquals;
 
-
-//import net.trackme.meetingservice.api.dto.SuperAdminMeetingUpdateDto;
 import org.springframework.security.access.AccessDeniedException;
 
 /**
@@ -166,31 +164,23 @@ public class MeetingServiceImpl implements MeetingService {
                     + "or hasRole('ADMIN')")
     public MeetingDto updateMeeting(UUID meetingId, UUID teamCardId, MeetingUpdateDto updateDto) {
         log.info("updateMeeting called by user: {}", SecurityContextHolder.getContext().getAuthentication().getName());
-log.info("Authorities: {}", SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+        log.info("Authorities: {}", SecurityContextHolder.getContext().getAuthentication().getAuthorities());
         var meeting = meetingRepository.findOne(teamCardIdEquals(teamCardId)
                         .and(meetingIdEquals(meetingId)))
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId, teamCardId));
 
-        // ========== ИЗМЕНЁННЫЙ БЛОК (учёт суперадминистратора) ==========
+        // Получаем текущего пользователя и проверяем роль
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isSuperAdmin = authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_SUPER_ADMIN") 
                               || auth.getAuthority().equals("SUPER_ADMIN"));
 
-        // Если НЕ суперадмин и статус завершённый – запрещаем
+        // Если НЕ суперадмин и статус завершённый – запрещаем (старая логика)
         if (!isSuperAdmin && MeetingStatus.COMPLETED_STATUSES.contains(meeting.getStatus())) {
             throw new MeetingCompletedException(meetingId, teamCardId);
         }
 
-        // Если суперадмин, но статус не разрешён – тоже запрещаем (опционально)
-        if (isSuperAdmin && !meeting.getStatus().isEditableBySuperAdmin()) {
-            throw new IllegalStateException(
-                String.format("Суперадминистратор может редактировать только встречи со статусами '%s' и '%s'.",
-                    MeetingStatus.FINALLY_COMPLETED.getDescription(),
-                    MeetingStatus.COMPLETED_AS_NOT_HAPPENED.getDescription())
-            );
-        }
-        // ================================================================
+        // Суперадмин может редактировать любые встречи – дополнительных ограничений не требуется
 
         OffsetDateTime oldStartDate = meeting.getStartDate();
         boolean dateChanged = updateDto.startDate() != null
