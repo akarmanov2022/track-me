@@ -295,9 +295,13 @@ class MeetingServiceImplSuperAdminTest {
 
     @Test
     void meetingStatus_toString_ReturnsEnumName() {
-        assertThat(MeetingStatus.FINALLY_COMPLETED.toString()).isEqualTo("FINALLY_COMPLETED");
-        assertThat(MeetingStatus.COMPLETED_AS_NOT_HAPPENED.toString()).isEqualTo("COMPLETED_AS_NOT_HAPPENED");
-        assertThat(MeetingStatus.SCHEDULED.toString()).isEqualTo("SCHEDULED");
-        assertThat(MeetingStatus.COMPLETED.toString()).isEqualTo("COMPLETED");
+        //assertThat(MeetingStatus.FINALLY_COMPLETED.toString()).isEqualTo("FINALLY_COMPLETED");
+        assertThat(MeetingStatus.FINALLY_COMPLETED.toString()).hasToString("FINALLY_COMPLETED");
+        //assertThat(MeetingStatus.COMPLETED_AS_NOT_HAPPENED.toString()).isEqualTo("COMPLETED_AS_NOT_HAPPENED");
+         assertThat(MeetingStatus.COMPLETED_AS_NOT_HAPPENED.toString()).hasToString("COMPLETED_AS_NOT_HAPPENED");
+        //assertThat(MeetingStatus.SCHEDULED.toString()).isEqualTo("SCHEDULED");
+        assertThat(MeetingStatus.SCHEDULED.toString()).hasToString("SCHEDULED");
+        //assertThat(MeetingStatus.COMPLETED.toString()).isEqualTo("COMPLETED");
+        assertThat(MeetingStatus.COMPLETED.toString()).hasToString("COMPLETED");
     }
 }

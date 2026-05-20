@@ -163,8 +163,10 @@ public class MeetingServiceImpl implements MeetingService {
             "hasPermission(#meetingId,'net.trackme.meetingservice.entities.Meeting', 'WRITE') "
                     + "or hasRole('ADMIN')")
     public MeetingDto updateMeeting(UUID meetingId, UUID teamCardId, MeetingUpdateDto updateDto) {
-        log.info("updateMeeting called by user: {}", SecurityContextHolder.getContext().getAuthentication().getName());
-        log.info("Authorities: {}", SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+        log.info("updateMeeting called by user: {}",
+         SecurityContextHolder.getContext().getAuthentication().getName());
+        log.info("Authorities: {}",
+         SecurityContextHolder.getContext().getAuthentication().getAuthorities());
         var meeting = meetingRepository.findOne(teamCardIdEquals(teamCardId)
                         .and(meetingIdEquals(meetingId)))
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId, teamCardId));
@@ -172,7 +174,7 @@ public class MeetingServiceImpl implements MeetingService {
         // Получаем текущего пользователя и проверяем роль
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isSuperAdmin = authentication != null && authentication.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_SUPER_ADMIN") 
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_SUPER_ADMIN")
                               || auth.getAuthority().equals("SUPER_ADMIN"));
 
         // Если НЕ суперадмин и статус завершённый – запрещаем (старая логика)
@@ -448,7 +450,7 @@ public class MeetingServiceImpl implements MeetingService {
         }
         
         boolean isSuperAdmin = authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_SUPER_ADMIN") 
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_SUPER_ADMIN")
                         || authority.getAuthority().equals("SUPER_ADMIN"));
         
         if (!isSuperAdmin) {
@@ -465,7 +467,8 @@ public class MeetingServiceImpl implements MeetingService {
         // 3. Проверяем статус (разрешены FINALLY_COMPLETED и COMPLETED_AS_NOT_HAPPENED)
         if (!meeting.getStatus().isEditableBySuperAdmin()) {
             throw new IllegalStateException(
-                String.format("Невозможно редактировать встречу со статусом '%s'. Разрешены только: '%s' и '%s'.",
+                String.format(
+                    "Невозможно редактировать встречу со статусом '%s'. Разрешены только: '%s' и '%s'.",
                     meeting.getStatus().getDescription(),
                     MeetingStatus.FINALLY_COMPLETED.getDescription(),
                     MeetingStatus.COMPLETED_AS_NOT_HAPPENED.getDescription())
