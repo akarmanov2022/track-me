@@ -567,7 +567,4 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }
-
-
-    
 }
