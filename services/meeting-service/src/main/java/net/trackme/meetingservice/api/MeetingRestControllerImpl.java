@@ -134,7 +134,8 @@ public class MeetingRestControllerImpl implements MeetingRestController {
 
     // НОВЫЙ МЕТОД ДЛЯ СУПЕРАДМИНИСТРАТОРА
     @Override
-    public ResponseEntity<MeetingDto> updateBySuperAdmin(UUID meetingId, MeetingUpdateDto updateDto) {
+    public ResponseEntity<MeetingDto> updateBySuperAdmin(UUID meetingId, 
+        MeetingUpdateDto updateDto) {
         return ResponseEntity.ok(meetingService.updateBySuperAdmin(meetingId, updateDto));
     }
 }
