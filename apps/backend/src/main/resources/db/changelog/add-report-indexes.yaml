@@ -83,3 +83,4 @@ databaseChangeLog:
         - sql:
             dbms: postgresql
             sql: DROP INDEX CONCURRENTLY IF EXISTS ${db_schema}.idx_meeting_team_id;
+            

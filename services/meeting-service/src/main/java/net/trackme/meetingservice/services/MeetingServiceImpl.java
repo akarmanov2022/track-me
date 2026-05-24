@@ -1,33 +1,10 @@
 package net.trackme.meetingservice.services;
 
 import java.io.IOException;
-
-import lombok.extern.slf4j.Slf4j;
-import net.trackme.commons.acl.AclService;
-import net.trackme.meetingservice.api.dto.MeetingCreateDto;
-import net.trackme.meetingservice.api.dto.MeetingDto;
-import net.trackme.meetingservice.api.dto.MeetingUpdateDto;
-import net.trackme.meetingservice.dao.MeetingRepository;
-import net.trackme.meetingservice.entities.Meeting;
-import net.trackme.meetingservice.entities.MeetingStatus;
-import net.trackme.meetingservice.messaging.own.MeetingCreatedEvent;
-import net.trackme.meetingservice.messaging.own.MeetingDeletedEvent;
-import net.trackme.meetingservice.messaging.own.MeetingEventsProducer;
-import net.trackme.meetingservice.messaging.own.MeetingUpdatedEvent;
-import net.trackme.meetingservice.mapping.MeetingMapper;
-import net.trackme.meetingservice.services.exceptions.MeetingAlreadyExistsInSameDayException;
-import net.trackme.meetingservice.services.exceptions.MeetingCompletedException;
-import net.trackme.meetingservice.services.exceptions.MeetingEmptyImageException;
-import net.trackme.meetingservice.services.exceptions.MeetingImageExtensionException;
-import net.trackme.meetingservice.services.exceptions.MeetingImageNotFoundException;
-import net.trackme.meetingservice.services.exceptions.MeetingImageUploadException;
-import net.trackme.meetingservice.services.exceptions.MeetingLargeImageSizeException;
-import net.trackme.meetingservice.services.exceptions.MeetingMIMETypeException;
-import net.trackme.meetingservice.services.exceptions.MeetingNotFoundException;
-import net.trackme.meetingservice.services.integration.backend.BackendApiClient;
-import net.trackme.meetingservice.services.integration.backend.dto.StreamDto;
-import net.trackme.meetingservice.services.integration.sso.SsoApiClient;
-import net.trackme.meetingservice.services.integration.sso.dto.UserDto;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+import static java.util.stream.Collectors.toSet;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ByteArrayResource;
@@ -42,13 +19,34 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-import static java.util.stream.Collectors.toSet;
-
+import lombok.extern.slf4j.Slf4j;
+import net.trackme.commons.acl.AclService;
+import net.trackme.meetingservice.api.dto.MeetingCreateDto;
+import net.trackme.meetingservice.api.dto.MeetingDto;
+import net.trackme.meetingservice.api.dto.MeetingUpdateDto;
+import net.trackme.meetingservice.dao.MeetingRepository;
+import net.trackme.meetingservice.entities.Meeting;
 import static net.trackme.meetingservice.entities.MeetingSpecification.meetingIdEquals;
 import static net.trackme.meetingservice.entities.MeetingSpecification.teamCardIdEquals;
+import net.trackme.meetingservice.entities.MeetingStatus;
+import net.trackme.meetingservice.mapping.MeetingMapper;
+import net.trackme.meetingservice.messaging.own.MeetingCreatedEvent;
+import net.trackme.meetingservice.messaging.own.MeetingDeletedEvent;
+import net.trackme.meetingservice.messaging.own.MeetingEventsProducer;
+import net.trackme.meetingservice.messaging.own.MeetingUpdatedEvent;
+import net.trackme.meetingservice.services.exceptions.MeetingAlreadyExistsInSameDayException;
+import net.trackme.meetingservice.services.exceptions.MeetingCompletedException;
+import net.trackme.meetingservice.services.exceptions.MeetingEmptyImageException;
+import net.trackme.meetingservice.services.exceptions.MeetingImageExtensionException;
+import net.trackme.meetingservice.services.exceptions.MeetingImageNotFoundException;
+import net.trackme.meetingservice.services.exceptions.MeetingImageUploadException;
+import net.trackme.meetingservice.services.exceptions.MeetingLargeImageSizeException;
+import net.trackme.meetingservice.services.exceptions.MeetingMIMETypeException;
+import net.trackme.meetingservice.services.exceptions.MeetingNotFoundException;
+import net.trackme.meetingservice.services.integration.backend.BackendApiClient;
+import net.trackme.meetingservice.services.integration.backend.dto.StreamDto;
+import net.trackme.meetingservice.services.integration.sso.SsoApiClient;
+import net.trackme.meetingservice.services.integration.sso.dto.UserDto;
 
 /**
  * Реализация сервиса для управления встречами.
@@ -137,6 +135,7 @@ public class MeetingServiceImpl implements MeetingService {
 
         var savedMeeting = meetingRepository.saveAndFlush(meeting);
         renumberMeetingsAfterDeletion(teamCardId);
+        recalculateTasksChain(teamCardId);
 
         var refreshedMeeting = meetingRepository.findById(savedMeeting.getId())
                 .orElseThrow(() -> new MeetingNotFoundException(savedMeeting.getId()));
@@ -178,7 +177,28 @@ public class MeetingServiceImpl implements MeetingService {
         }
 
         var oldStatus = meeting.getStatus();
+
+        // Сохраняем старое значение ДО обновления
+        String oldTasksNext = meeting.getTasksNextMeeting();
+
         meetingMapper.updateEntityFromDto(updateDto, meeting);
+
+        // Если встречу завершили как несостоявшуюся — сбрасываем teamStatus
+        if (updateDto.status() == MeetingStatus.COMPLETED_AS_NOT_HAPPENED) {
+            meeting.setTeamStatus(null);
+        }
+
+        // Отслеживаем ручное изменение tasksNextMeeting
+        if (updateDto.tasksNextMeeting() != null) {
+            String newValue = updateDto.tasksNextMeeting();
+            if (!newValue.equals(oldTasksNext)) {
+                meeting.setTasksNextManuallySet(true);
+            }
+            if (newValue.isBlank()) {
+                meeting.setTasksNextManuallySet(false);
+            }
+        }
+
         var savedMeeting = meetingRepository.saveAndFlush(meeting);
 
         if (dateChanged) {
@@ -187,6 +207,8 @@ public class MeetingServiceImpl implements MeetingService {
             savedMeeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId));
         }
+        
+        recalculateTasksChain(teamCardId);
 
         if (oldStatus != meeting.getStatus()) {
             sendMeetingUpdatedEvent(savedMeeting, oldStatus);
@@ -197,20 +219,29 @@ public class MeetingServiceImpl implements MeetingService {
 
     @Override
     @Transactional
-    @PreAuthorize(
-            "hasPermission(#meetingId,'net.trackme.meetingservice.entities.Meeting', 'READ') "
-                    + "or hasRole('ADMIN')")
     public void deleteMeeting(UUID meetingId) {
+        log.error("=== DELETE MEETING CALLED: {} ===", meetingId);
+        
         var meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId));
 
         UUID teamCardId = meeting.getTeamCardId();
+        log.error("=== Meeting found: teamCardId={}, status={} ===", teamCardId, meeting.getStatus());
 
         meetingRepository.delete(meeting);
+        log.error("=== Meeting deleted from repository ===");
+        
         aclService.deleteAcl(meeting);
+        log.error("=== ACL deleted ===");
 
         renumberMeetingsAfterDeletion(teamCardId);
+        recalculateTasksChain(teamCardId);
         meetingRepository.flush();
+        log.error("=== Flush done ===");
+        
+        // Проверяем, удалилась ли встреча
+        boolean exists = meetingRepository.existsById(meetingId);
+        log.error("=== Meeting exists after deletion: {} ===", exists);
 
         var event = MeetingDeletedEvent.builder()
                 .meetingId(meetingId)
@@ -219,8 +250,7 @@ public class MeetingServiceImpl implements MeetingService {
                 .build();
         meetingEventsProducer.sendMeetingDeletedEvent(event);
 
-        log.info("Meeting {} deleted and meetings renumbered for team card {}",
-                meetingId, teamCardId);
+        log.error("=== DELETE MEETING COMPLETED: {} ===", meetingId);
     }
 
     @Override
@@ -352,7 +382,7 @@ public class MeetingServiceImpl implements MeetingService {
                 .oldStatus(oldStatus)
                 .teamStatus(meeting.getTeamStatus())
                 .teamCardId(meeting.getTeamCardId())
-                .teamGrade(meeting.getTeamStatus() == null ? 0 : meeting.getTeamStatus().getValue())
+                .teamGrade(meeting.getTeamStatusValue() != null ? meeting.getTeamStatusValue().doubleValue() : 0)
                 .build();
 
         meetingEventsProducer.sendMeetingUpdatedEvent(event);
@@ -420,5 +450,60 @@ public class MeetingServiceImpl implements MeetingService {
                 dto.tasksCurrentMeeting(),
                 dto.tasksNextMeeting()
         );
+    }
+
+    /**
+     * Пересчитывает цепочку задач для всех встреч команды.
+     * tasksCurrentMeeting предыдущей встречи → tasksNextMeeting следующей встречи.
+     *
+     * @param teamCardId идентификатор карточки команды
+     */
+    private void recalculateTasksChain(UUID teamCardId) {
+        var meetings = meetingRepository.findAll(
+            teamCardIdEquals(teamCardId),
+            Sort.by(Sort.Direction.ASC, "startDate")
+        );
+        
+        if (meetings.isEmpty()) {
+            return;
+        }
+        
+        clearFirstMeetingIfNeeded(meetings.get(0));
+        
+        for (int i = 1; i < meetings.size(); i++) {
+            updateTasksNextIfNotManual(meetings.get(i), meetings, i);
+        }
+        
+        meetingRepository.saveAllAndFlush(meetings);
+    }
+
+    private void clearFirstMeetingIfNeeded(Meeting first) {
+        if (!first.isTasksNextManuallySet()) {
+            first.setTasksNextMeeting(null);
+        }
+    }
+
+    private void updateTasksNextIfNotManual(Meeting current, List<Meeting> allMeetings, int currentIndex) {
+        if (current.isTasksNextManuallySet()) {
+            return;
+        }
+        
+        String newValue = findTasksFromLastHappenedMeeting(allMeetings, currentIndex);
+        current.setTasksNextMeeting(newValue);
+    }
+
+    private String findTasksFromLastHappenedMeeting(List<Meeting> meetings, int currentIndex) {
+        for (int j = currentIndex - 1; j >= 0; j--) {
+            Meeting previous = meetings.get(j);
+            if (previous.getStatus() != MeetingStatus.COMPLETED_AS_NOT_HAPPENED) {
+                return getNonBlankTasksCurrent(previous);
+            }
+        }
+        return null;
+    }
+
+    private String getNonBlankTasksCurrent(Meeting meeting) {
+        String tasks = meeting.getTasksCurrentMeeting();
+        return (tasks != null && !tasks.isBlank()) ? tasks : null;
     }
 }

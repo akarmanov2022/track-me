@@ -102,6 +102,7 @@ public class MeetingStatusUpdateService {
             for (Meeting meeting : notHappenedMeetings) {
                 if (hasUnfilledFields(meeting)) {
                     meeting.setStatus(MeetingStatus.COMPLETED_AS_NOT_HAPPENED);
+                    meeting.setTeamStatus(null);
                     log.debug(
                             "Meeting {} set to COMPLETED_AS_NOT_HAPPENED after {} days. "
                                     + "Team status set to MANY_ISSUES",
@@ -136,9 +137,9 @@ public class MeetingStatusUpdateService {
                 .teamStatus(meeting.getTeamStatus())
                 .teamCardId(meeting.getTeamCardId())
                 .teamGrade(
-                        meeting.getTeamStatus() == null
-                                ? 0
-                                : meeting.getTeamStatus().getValue()
+                    meeting.getTeamStatusValue() != null 
+                            ? meeting.getTeamStatusValue().doubleValue() 
+                            : 0
                 )
                 .meetingLink(getMeetingLink(meeting))
                 .build();
