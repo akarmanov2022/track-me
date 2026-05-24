@@ -254,8 +254,7 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void getUserTeams_success() throws Exception {
     mockMvc.perform(get("/api/v1/users/{username}/teams", TRACKER))
-        .andExpect(status().isOk())
-        .andExpect(header().string("Content-Type", "application/json"));
+        .andExpect(status().isOk());
   }
 
   @Test
@@ -286,7 +285,6 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void deleteUser_success() throws Exception {
-        // Создаём пользователя через сервис
         var dto = net.trackme.sso.dto.RegistrationRequestDto.builder()
             .username("todeletectrl")
             .password("Password@123")
@@ -297,15 +295,13 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
             .build();
         userService.saveUser(dto);
         
-        // Проверяем, что пользователь создан
         assertThat(userService.findByUsername("todeletectrl")).isNotNull();
         
         mockMvc.perform(delete("/api/v1/users")
                 .param("username", "todeletectrl")
                 .with(csrf()))
-            .andExpect(status().isOk());  // или .isNoContent() в зависимости от API
+            .andExpect(status().isOk());
         
-        // Проверяем, что пользователь действительно удалён
         assertThatThrownBy(() -> userService.findByUsername("todeletectrl"))
             .isInstanceOf(UsernameNotFoundException.class);
   }

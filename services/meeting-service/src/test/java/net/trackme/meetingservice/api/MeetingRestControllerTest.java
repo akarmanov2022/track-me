@@ -38,7 +38,6 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -49,6 +48,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 
 @WithMockUser(value = "superadmin", roles = {"SUPER_ADMIN"})
 @SpringBootTest(webEnvironment = RANDOM_PORT)
@@ -486,6 +486,95 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
                 .andExpect(header().exists(HttpHeaders.CONTENT_DISPOSITION))
                 .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .andExpect(content().bytes("fake-excel-content".getBytes()));
+    }
+
+    @Test
+    @WithMockUser(value = "superadmin", roles = {"SUPER_ADMIN"})
+    void updateMeeting_notHappenedResetsTeamStatus() throws Exception {
+        var meeting = meetingRepository.findAll().getFirst();
+        var meetingUpdateDto = MeetingUpdateDto.builder()
+                .status(MeetingStatus.COMPLETED_AS_NOT_HAPPENED)
+                .build();
+
+        mockMvc.perform(patch("/api/v1/update-meeting/" + meeting.getId())
+                        .param("teamCardId", TEAM_CARD_ID.toString())
+                        .contentType("application/json")
+                        .with(csrf())
+                        .content(objectMapper.writeValueAsString(meetingUpdateDto)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("COMPLETED_AS_NOT_HAPPENED"))
+                .andExpect(jsonPath("$.teamStatus").isEmpty());
+    }
+
+    @Test
+    @WithMockUser(value = "superadmin", roles = {"SUPER_ADMIN"})
+    void updateMeeting_tasksNextManualSet() throws Exception {
+        var meeting = meetingRepository.findAll().getFirst();
+        var meetingUpdateDto = MeetingUpdateDto.builder()
+                .tasksNextMeeting("Manual tasks")
+                .build();
+
+        mockMvc.perform(patch("/api/v1/update-meeting/" + meeting.getId())
+                        .param("teamCardId", TEAM_CARD_ID.toString())
+                        .contentType("application/json")
+                        .with(csrf())
+                        .content(objectMapper.writeValueAsString(meetingUpdateDto)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tasksNextMeeting").value("Manual tasks"));
+    }
+
+    @Test
+    @WithMockUser(value = "superadmin", roles = {"SUPER_ADMIN"})
+    void updateMeeting_tasksNextBlankClearsManualFlag() throws Exception {
+        var meeting = meetingRepository.findAll().getFirst();
+        meeting.setTasksNextManuallySet(true);
+        meeting.setTasksNextMeeting("Old tasks");
+        meetingRepository.save(meeting);
+
+        var meetingUpdateDto = MeetingUpdateDto.builder()
+                .tasksNextMeeting("")
+                .build();
+
+        mockMvc.perform(patch("/api/v1/update-meeting/" + meeting.getId())
+                        .param("teamCardId", TEAM_CARD_ID.toString())
+                        .contentType("application/json")
+                        .with(csrf())
+                        .content(objectMapper.writeValueAsString(meetingUpdateDto)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tasksNextMeeting").isEmpty());
+    }
+
+    @Test
+    @WithMockUser(value = "superadmin", roles = {"SUPER_ADMIN"})
+    void createMeeting_recaculateTasksChain() throws Exception {
+        // Первая встреча - без tasksNextMeeting
+        var meeting1 = meetingRepository.findAll().getFirst();
+        meeting1.setTasksCurrentMeeting("Tasks from meeting 1");
+        meeting1.setTasksNextMeeting(null);
+        meeting1.setTasksNextManuallySet(false);
+        meetingRepository.save(meeting1);
+
+        // Создаём новую встречу позже
+        var createDto = MeetingCreateDto.builder()
+                .startDate(OffsetDateTime.now().plusDays(5))
+                .build();
+
+        mockMvc.perform(post("/api/v1/create-meeting")
+                        .param("teamCardId", TEAM_CARD_ID.toString())
+                        .contentType("application/json")
+                        .with(csrf())
+                        .content(objectMapper.writeValueAsString(createDto)))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        // Проверяем что у второй встречи (с датой +2 дня) появился tasksNextMeeting
+        var updatedMeeting2 = meetingRepository.findAll().stream()
+                .filter(m -> m.getStartDate().toLocalDate().equals(OffsetDateTime.now().plusDays(2).toLocalDate()))
+                .findFirst().orElseThrow();
+        Assertions.assertEquals("Tasks from meeting 1", updatedMeeting2.getTasksNextMeeting());
     }
 
 }
