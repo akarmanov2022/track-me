@@ -49,6 +49,8 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         }
     }
 
+    // ==================== resetPassword ====================
+
     @Test
     void resetPassword_emailNotFound() {
         var email = "john@john.john";
@@ -64,6 +66,8 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         var user = userService.findByEmail(TRACKER_EMAIL);
         assertNotNull(user, "User should exist after password reset");
     }
+
+    // ==================== saveUser ====================
 
     @Test
     @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
@@ -99,6 +103,8 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         assertEquals(ROLE_NOT_FOUND, exception.getErrorCode());
     }
 
+    // ==================== changePassword ====================
+
     @Test
     @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
     void changePassword_success() {
@@ -117,6 +123,8 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
             () -> userService.changePassword(TRACKER, newPassword, wrongOldPassword));
     }
 
+    // ==================== save entity ====================
+
     @Test
     @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
     void save_userEntity_success() {
@@ -134,6 +142,8 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
     void save_nullEntity_throwsException() {
         assertThrows(IllegalArgumentException.class, () -> userService.save(null));
     }
+
+    // ==================== enableUser ====================
 
     @Test
     @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
@@ -163,6 +173,8 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         assertDoesNotThrow(() -> userService.enableUser(RONIN));
         assertTrue(userService.findByUsername(RONIN).getActive());
     }
+
+    // ==================== disableUser ====================
 
     @Test
     @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
@@ -228,6 +240,28 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
 
     @Test
     @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
+    void disableUser_roninAlreadyDisabled_throwsException() {
+        // Убеждаемся что ronin активен
+        var roninUser = userService.findByUsername(RONIN);
+        if (!roninUser.getActive()) {
+            userService.enableUser(RONIN);
+        }
+        
+        // Отключаем ronin
+        userService.disableUser(RONIN);
+        
+        // Пытаемся отключить уже отключенного ronin - должен выбросить исключение
+        assertThrows(TeamReassignmentException.class, 
+            () -> userService.disableUser(RONIN));
+        
+        // Возвращаем ronin в активное состояние
+        userService.enableUser(RONIN);
+    }
+
+    // ==================== unlockUser ====================
+
+    @Test
+    @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
     void unlockUser_success() {
         userService.enableUser(TRACKER);
         userService.disableUser(TRACKER);
@@ -258,6 +292,8 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         userService.unlockUser(RONIN);
         assertTrue(userService.findByUsername(RONIN).getAccountNonLocked());
     }
+
+    // ==================== deleteUser ====================
 
     @Test
     void deleteUser_ronin_noAuth_throwsException() {
@@ -295,6 +331,27 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
+    void deleteUser_roninAsSuperAdmin_success() {
+        // Создаём временного пользователя для удаления
+        var dto = RegistrationRequestDto.builder()
+            .username("tempuser")
+            .password("Password@123")
+            .phoneNumber("+1234567890")
+            .fullName("Temp User")
+            .email("tempuser@test.com")
+            .role(ADMIN_ROLE)
+            .build();
+        userService.saveUser(dto);
+        
+        // Удаляем через superadmin - покрывает deleteUser с logUserTeams + reassignTeamsToRonin
+        assertDoesNotThrow(() -> userService.deleteUser("tempuser"));
+        assertThrows(Exception.class, () -> userService.findByUsername("tempuser"));
+    }
+
+    // ==================== findByUsername / findByEmail ====================
+
+    @Test
     void findByUsername_notFound_throwsException() {
         assertThrows(Exception.class, () -> userService.findByUsername("nonexistent_user_12345"));
     }
@@ -306,11 +363,37 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void findByUsername_existingUser_returnsUser() {
+        var user = userService.findByUsername(TRACKER);
+        assertNotNull(user);
+        assertEquals(TRACKER, user.getUsername());
+    }
+
+    // ==================== getUserTeams ====================
+
+    @Test
     @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
     void getUserTeams_returnsList() {
         var teams = userService.getUserTeams(TRACKER);
         assertNotNull(teams, "Teams list should not be null");
     }
+
+    @Test
+    void getUserTeams_noAuthContext_returnsEmptyList() {
+        var oldAttributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        try {
+            org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
+            var teams = userService.getUserTeams(TRACKER);
+            assertNotNull(teams, "Teams list should not be null even without auth context");
+            assertTrue(teams.isEmpty(), "Teams list should be empty without backend");
+        } finally {
+            if (oldAttributes != null) {
+                org.springframework.web.context.request.RequestContextHolder.setRequestAttributes(oldAttributes);
+            }
+        }
+    }
+
+    // ==================== exists ====================
 
     @Test
     void existsByEmailOrUsername_existingUser_returnsTrue() {
@@ -332,12 +415,7 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         assertFalse(userService.existsByEmail("no@no.com"));
     }
 
-    @Test
-    void findByUsername_existingUser_returnsUser() {
-        var user = userService.findByUsername(TRACKER);
-        assertNotNull(user);
-        assertEquals(TRACKER, user.getUsername());
-    }
+    // ==================== getUserInfo ====================
 
     @Test
     void getUserInfo_returnsCorrectData() {
@@ -356,6 +434,8 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         assertTrue(dto.roles().stream().anyMatch(r -> r.equals("SUPER_ADMIN")));
     }
 
+    // ==================== getTrackers / getAdmins ====================
+
     @Test
     void getTrackers_returnsPage() {
         var page = userService.getTrackers(
@@ -372,23 +452,20 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         assertTrue(page.getTotalElements() >= 0);
     }
 
+    // ==================== TeamReassignmentException ====================
+
     @Test
-    @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
-    void disableUser_roninAlreadyDisabled_throwsException() {
-        // Убеждаемся что ronin активен
-        var roninUser = userService.findByUsername(RONIN);
-        if (!roninUser.getActive()) {
-            userService.enableUser(RONIN);
-        }
-        
-        // Отключаем ronin
-        userService.disableUser(RONIN);
-        
-        // Пытаемся отключить уже отключенного ronin - должен выбросить исключение
-        assertThrows(TeamReassignmentException.class, 
-            () -> userService.disableUser(RONIN));
-        
-        // Возвращаем ronin в активное состояние
-        userService.enableUser(RONIN);
+    void teamReassignmentException_withCause() {
+        var cause = new RuntimeException("Root cause");
+        var exception = new TeamReassignmentException("Test message", cause);
+        assertEquals("Test message", exception.getMessage());
+        assertEquals(cause, exception.getCause());
+    }
+
+    @Test
+    void teamReassignmentException_withMessage() {
+        var exception = new TeamReassignmentException("Test message");
+        assertEquals("Test message", exception.getMessage());
+        assertNull(exception.getCause());
     }
 }

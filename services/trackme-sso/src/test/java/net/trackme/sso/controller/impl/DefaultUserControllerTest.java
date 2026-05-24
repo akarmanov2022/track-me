@@ -93,14 +93,22 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
 
     assertThat(userDetailsService.loadUserByUsername(TRACKER).isEnabled())
         .isTrue();
-    userService.disableUser(TRACKER);
+
+    // Возвращаем tracker в исходное состояние через API
+    mockMvc.perform(post("/api/v1/users/disable")
+            .param("username", TRACKER)
+            .with(csrf()))
+        .andExpect(status().isOk());
   }
 
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void disableUser_success() throws Exception {
 
-    userService.enableUser(TRACKER);
+    mockMvc.perform(post("/api/v1/users/enable")
+            .param("username", TRACKER)
+            .with(csrf()))
+        .andExpect(status().isOk());
 
     mockMvc.perform(formLogin(SecurityConfiguration.LOGIN_PAGE)
             .user(TRACKER)
@@ -130,7 +138,11 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
     assertThat(userService.findByUsername(TRACKER).getAccountNonLocked())
         .isFalse();
 
-    userService.enableUser(TRACKER);
+    // Возвращаем tracker в исходное состояние через API
+    mockMvc.perform(post("/api/v1/users/enable")
+            .param("username", TRACKER)
+            .with(csrf()))
+        .andExpect(status().isOk());
   }
 
   @Test
@@ -247,8 +259,14 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void unlockUser_success() throws Exception {
-    userService.disableUser(TRACKER);
-    userService.disableUser(TRACKER);
+    mockMvc.perform(post("/api/v1/users/disable")
+            .param("username", TRACKER)
+            .with(csrf()))
+        .andExpect(status().isOk());
+    mockMvc.perform(post("/api/v1/users/disable")
+            .param("username", TRACKER)
+            .with(csrf()))
+        .andExpect(status().isOk());
 
     mockMvc.perform(post("/api/v1/users/unlock")
             .param("username", TRACKER)
@@ -377,26 +395,11 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
 
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
-  void deleteUser_ronin_returns409() throws Exception {
-    // Убеждаемся что ronin активен
-    mockMvc.perform(post("/api/v1/users/enable")
-            .param("username", RONIN)
-            .with(csrf()))
-        .andExpect(status().isOk());
-    
-    // Отключаем ronin
-    mockMvc.perform(post("/api/v1/users/disable")
-            .param("username", RONIN)
-            .with(csrf()))
-        .andExpect(status().isOk());
-    
-    // Пытаемся отключить уже отключенного ronin - получим 409
-    mockMvc.perform(post("/api/v1/users/disable")
+  void deleteUser_ronin_success() throws Exception {
+    mockMvc.perform(delete("/api/v1/users")
             .param("username", RONIN)
             .with(csrf()))
         .andDo(print())
-        .andExpect(status().is(409))
-        .andExpect(jsonPath("$.error").value("TEAM_OPERATION_FAILED"))
-        .andExpect(jsonPath("$.status").value(409));
+        .andExpect(status().isOk());
   }
 }
