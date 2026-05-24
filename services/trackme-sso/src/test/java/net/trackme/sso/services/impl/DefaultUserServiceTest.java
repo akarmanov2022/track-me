@@ -258,6 +258,27 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         userService.enableUser(RONIN);
     }
 
+    // ==================== disableUser с недоступным backend ====================
+
+    @Test
+    @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
+    void disableRonin_backendUnavailable_success() {
+        // Убеждаемся что ronin активен
+        var roninUser = userService.findByUsername(RONIN);
+        if (!roninUser.getActive()) {
+            userService.enableUser(RONIN);
+        }
+        
+        // Отключаем ronin — backend недоступен (localhost:9999),
+        // getUserTeams упадёт с ResourceAccessException,
+        // но disableRonin обработает ошибку и продолжит отключение
+        userService.disableUser(RONIN);
+        assertFalse(userService.findByUsername(RONIN).getActive());
+        
+        // Возвращаем обратно
+        userService.enableUser(RONIN);
+    }
+
     // ==================== unlockUser ====================
 
     @Test
@@ -349,6 +370,27 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         assertThrows(Exception.class, () -> userService.findByUsername("tempuser"));
     }
 
+    @Test
+    @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
+    void deleteUser_backendUnavailable_success() {
+        // Создаём пользователя
+        var dto = RegistrationRequestDto.builder()
+            .username("todelete2")
+            .password("Password@123")
+            .phoneNumber("+1234567890")
+            .fullName("To Delete 2")
+            .email("todelete2@test.com")
+            .role(ADMIN_ROLE)
+            .build();
+        userService.saveUser(dto);
+        
+        // Удаляем — backend недоступен (localhost:9999),
+        // logUserTeams и reassignTeamsToRonin упадут с ResourceAccessException,
+        // но deleteUser должен успешно завершиться
+        assertDoesNotThrow(() -> userService.deleteUser("todelete2"));
+        assertThrows(Exception.class, () -> userService.findByUsername("todelete2"));
+    }
+
     // ==================== findByUsername / findByEmail ====================
 
     @Test
@@ -380,17 +422,33 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
 
     @Test
     void getUserTeams_noAuthContext_returnsEmptyList() {
+        // Сохраняем текущий контекст
         var oldAttributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
         try {
+            // Очищаем контекст запроса
             org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
+            // extractBearerToken вернёт тестовый токен,
+            // restClient попытается подключиться к localhost:9999,
+            // получит ResourceAccessException, и метод вернёт пустой список
             var teams = userService.getUserTeams(TRACKER);
             assertNotNull(teams, "Teams list should not be null even without auth context");
             assertTrue(teams.isEmpty(), "Teams list should be empty without backend");
         } finally {
+            // Восстанавливаем контекст
             if (oldAttributes != null) {
                 org.springframework.web.context.request.RequestContextHolder.setRequestAttributes(oldAttributes);
             }
         }
+    }
+
+    @Test
+    @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
+    void getUserTeams_backendUnavailable_returnsEmptyList() {
+        // Backend недоступен на localhost:9999,
+        // getUserTeams должен поймать ResourceAccessException и вернуть пустой список
+        var teams = userService.getUserTeams(TRACKER);
+        assertNotNull(teams);
+        assertTrue(teams.isEmpty(), "Should return empty list when backend is unavailable");
     }
 
     // ==================== exists ====================
