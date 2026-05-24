@@ -5,8 +5,10 @@ import net.trackme.sso.AbstractIntegrationTest;
 import net.trackme.sso.dto.RegistrationRequestDto;
 import net.trackme.sso.exception.AuthException;
 import net.trackme.sso.exception.EmailNotFoundException;
+import net.trackme.sso.exception.TeamReassignmentException;
 import net.trackme.sso.exception.WrongOldPasswordException;
 import net.trackme.sso.services.UserService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +30,24 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
 
     @Autowired
     private UserService userService;
+
+    @BeforeEach
+    void setUp() {
+        // Создаём ronin если его нет в тестовой БД
+        try {
+            userService.findByUsername(RONIN);
+        } catch (Exception e) {
+            var dto = RegistrationRequestDto.builder()
+                .username(RONIN)
+                .password("RoninPass@123")
+                .phoneNumber("+1234567890")
+                .fullName("Ronin User")
+                .email("ronin@tracker.com")
+                .role("TRACKER")
+                .build();
+            userService.saveUser(dto);
+        }
+    }
 
     @Test
     void resetPassword_emailNotFound() {
@@ -350,5 +370,25 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
                 new FilterRequest(List.of()), Pageable.ofSize(10));
         assertNotNull(page);
         assertTrue(page.getTotalElements() >= 0);
+    }
+
+    @Test
+    @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
+    void disableUser_roninAlreadyDisabled_throwsException() {
+        // Убеждаемся что ronin активен
+        var roninUser = userService.findByUsername(RONIN);
+        if (!roninUser.getActive()) {
+            userService.enableUser(RONIN);
+        }
+        
+        // Отключаем ronin
+        userService.disableUser(RONIN);
+        
+        // Пытаемся отключить уже отключенного ronin - должен выбросить исключение
+        assertThrows(TeamReassignmentException.class, 
+            () -> userService.disableUser(RONIN));
+        
+        // Возвращаем ronin в активное состояние
+        userService.enableUser(RONIN);
     }
 }

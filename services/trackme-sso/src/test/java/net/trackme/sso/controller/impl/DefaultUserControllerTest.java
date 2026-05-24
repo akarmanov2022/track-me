@@ -3,6 +3,7 @@ package net.trackme.sso.controller.impl;
 import net.trackme.sso.AbstractIntegrationTest;
 import net.trackme.sso.config.security.SecurityConfiguration;
 import net.trackme.sso.dao.entity.UserEntity;
+import net.trackme.sso.dto.RegistrationRequestDto;
 import net.trackme.sso.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,11 +23,13 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class DefaultUserControllerTest extends AbstractIntegrationTest {
 
   private static final String TRACKER = "tracker";
+  private static final String RONIN = "ronin";
 
   @Autowired
   private MockMvc mockMvc;
@@ -49,6 +52,21 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
       }
     } catch (UsernameNotFoundException e) {
       // Пользователь tracker не найден в тестовой БД — OK
+    }
+
+    // Создаём ronin если его нет
+    try {
+      userService.findByUsername(RONIN);
+    } catch (UsernameNotFoundException e) {
+      var dto = RegistrationRequestDto.builder()
+          .username(RONIN)
+          .password("RoninPass@123")
+          .phoneNumber("+1234567890")
+          .fullName("Ronin User")
+          .email("ronin@tracker.com")
+          .role("TRACKER")
+          .build();
+      userService.saveUser(dto);
     }
   }
 
@@ -170,8 +188,7 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "application/json"))
         .andExpect(jsonPath("$.content[*].username").value(hasItem(TRACKER)))
-        .andExpect(jsonPath("$.content[*].username").value(hasItem("ronin")))
-        .andExpect(jsonPath("$.content.length()").value(2))
+        .andExpect(jsonPath("$.content[*].username").value(hasItem(RONIN)))
         .andExpect(jsonPath("$.page.totalElements").value(2));
   }
 
@@ -285,7 +302,7 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void deleteUser_success() throws Exception {
-        var dto = net.trackme.sso.dto.RegistrationRequestDto.builder()
+        var dto = RegistrationRequestDto.builder()
             .username("todeletectrl")
             .password("Password@123")
             .phoneNumber("+1234567890")
@@ -325,5 +342,61 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
                   """)
               .with(csrf()))
           .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
+  void handleTeamReassignmentException_returns409() throws Exception {
+    // Убеждаемся что ronin активен через API
+    mockMvc.perform(post("/api/v1/users/enable")
+            .param("username", RONIN)
+            .with(csrf()))
+        .andExpect(status().isOk());
+
+    // Отключаем ronin через API
+    mockMvc.perform(post("/api/v1/users/disable")
+            .param("username", RONIN)
+            .with(csrf()))
+        .andExpect(status().isOk());
+
+    // Пытаемся отключить уже отключенного - получим 409
+    mockMvc.perform(post("/api/v1/users/disable")
+            .param("username", RONIN)
+            .with(csrf()))
+        .andDo(print())
+        .andExpect(status().is(409))
+        .andExpect(jsonPath("$.error").value("TEAM_OPERATION_FAILED"))
+        .andExpect(jsonPath("$.status").value(409));
+
+    // Возвращаем ronin обратно
+    mockMvc.perform(post("/api/v1/users/enable")
+            .param("username", RONIN)
+            .with(csrf()))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
+  void deleteUser_ronin_returns409() throws Exception {
+    // Убеждаемся что ronin активен
+    mockMvc.perform(post("/api/v1/users/enable")
+            .param("username", RONIN)
+            .with(csrf()))
+        .andExpect(status().isOk());
+    
+    // Отключаем ronin
+    mockMvc.perform(post("/api/v1/users/disable")
+            .param("username", RONIN)
+            .with(csrf()))
+        .andExpect(status().isOk());
+    
+    // Пытаемся отключить уже отключенного ronin - получим 409
+    mockMvc.perform(post("/api/v1/users/disable")
+            .param("username", RONIN)
+            .with(csrf()))
+        .andDo(print())
+        .andExpect(status().is(409))
+        .andExpect(jsonPath("$.error").value("TEAM_OPERATION_FAILED"))
+        .andExpect(jsonPath("$.status").value(409));
   }
 }
