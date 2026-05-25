@@ -7,6 +7,7 @@ import net.trackme.sso.exception.AuthException;
 import net.trackme.sso.exception.EmailNotFoundException;
 import net.trackme.sso.exception.TeamReassignmentException;
 import net.trackme.sso.exception.WrongOldPasswordException;
+import net.trackme.sso.services.BackendClient;
 import net.trackme.sso.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,11 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 
 import static net.trackme.sso.type.AuthErrorCode.ROLE_NOT_FOUND;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class DefaultUserServiceTest extends AbstractIntegrationTest {
 
@@ -31,8 +35,16 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
     @Autowired
     private UserService userService;
 
+    @MockitoBean
+    private BackendClient backendClient;
+
     @BeforeEach
     void setUp() {
+        // Мокаем BackendClient — возвращаем пустой список команд
+        when(backendClient.getUserTeams(anyString(), anyString()))
+            .thenReturn(java.util.Collections.emptyList());
+        doNothing().when(backendClient).reassignTeamsToRonin(any(), anyString());
+
         // Создаём ronin если его нет в тестовой БД
         try {
             userService.findByUsername(RONIN);
@@ -258,27 +270,6 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
         userService.enableUser(RONIN);
     }
 
-    // ==================== disableUser с недоступным backend ====================
-
-    @Test
-    @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
-    void disableRonin_backendUnavailable_success() {
-        // Убеждаемся что ronin активен
-        var roninUser = userService.findByUsername(RONIN);
-        if (!roninUser.getActive()) {
-            userService.enableUser(RONIN);
-        }
-        
-        // Отключаем ronin — backend недоступен (localhost:9999),
-        // getUserTeams упадёт с ResourceAccessException,
-        // но disableRonin обработает ошибку и продолжит отключение
-        userService.disableUser(RONIN);
-        assertFalse(userService.findByUsername(RONIN).getActive());
-        
-        // Возвращаем обратно
-        userService.enableUser(RONIN);
-    }
-
     // ==================== unlockUser ====================
 
     @Test
@@ -372,23 +363,31 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
 
     @Test
     @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
-    void deleteUser_backendUnavailable_success() {
+    void deleteUser_reassignTeamsFails_success() {
+        // Настраиваем мок чтобы он выбрасывал исключение при reassign
+        doThrow(new RuntimeException("Backend error"))
+            .when(backendClient).reassignTeamsToRonin(any(), anyString());
+
         // Создаём пользователя
         var dto = RegistrationRequestDto.builder()
-            .username("todelete2")
+            .username("todelete4")
             .password("Password@123")
             .phoneNumber("+1234567890")
-            .fullName("To Delete 2")
-            .email("todelete2@test.com")
+            .fullName("To Delete 4")
+            .email("todelete4@test.com")
             .role(ADMIN_ROLE)
             .build();
         userService.saveUser(dto);
-        
-        // Удаляем — backend недоступен (localhost:9999),
-        // logUserTeams и reassignTeamsToRonin упадут с ResourceAccessException,
-        // но deleteUser должен успешно завершиться
-        assertDoesNotThrow(() -> userService.deleteUser("todelete2"));
-        assertThrows(Exception.class, () -> userService.findByUsername("todelete2"));
+
+        // Удаляем — ошибка в reassignTeamsToRonin должна быть обработана
+        assertDoesNotThrow(() -> userService.deleteUser("todelete4"));
+        assertThrows(Exception.class, () -> userService.findByUsername("todelete4"));
+
+        // Возвращаем мок в исходное состояние
+        reset(backendClient);
+        when(backendClient.getUserTeams(anyString(), anyString()))
+            .thenReturn(java.util.Collections.emptyList());
+        doNothing().when(backendClient).reassignTeamsToRonin(any(), anyString());
     }
 
     // ==================== findByUsername / findByEmail ====================
@@ -421,34 +420,39 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void getUserTeams_noAuthContext_returnsEmptyList() {
-        // Сохраняем текущий контекст
-        var oldAttributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
-        try {
-            // Очищаем контекст запроса
-            org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
-            // extractBearerToken вернёт тестовый токен,
-            // restClient попытается подключиться к localhost:9999,
-            // получит ResourceAccessException, и метод вернёт пустой список
-            var teams = userService.getUserTeams(TRACKER);
-            assertNotNull(teams, "Teams list should not be null even without auth context");
-            assertTrue(teams.isEmpty(), "Teams list should be empty without backend");
-        } finally {
-            // Восстанавливаем контекст
-            if (oldAttributes != null) {
-                org.springframework.web.context.request.RequestContextHolder.setRequestAttributes(oldAttributes);
-            }
-        }
+    @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
+    void getUserTeams_propagatesTeamReassignmentException() {
+        // Настраиваем мок чтобы он выбрасывал TeamReassignmentException
+        when(backendClient.getUserTeams(anyString(), anyString()))
+            .thenThrow(new TeamReassignmentException("Test exception"));
+
+        // Исключение должно проброситься
+        assertThrows(TeamReassignmentException.class, () -> userService.getUserTeams(TRACKER));
+
+        // Возвращаем мок в исходное состояние
+        reset(backendClient);
+        when(backendClient.getUserTeams(anyString(), anyString()))
+            .thenReturn(java.util.Collections.emptyList());
+        doNothing().when(backendClient).reassignTeamsToRonin(any(), anyString());
     }
 
     @Test
     @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
-    void getUserTeams_backendUnavailable_returnsEmptyList() {
-        // Backend недоступен на localhost:9999,
-        // getUserTeams должен поймать ResourceAccessException и вернуть пустой список
+    void getUserTeams_backendException_returnsEmptyList() {
+        // Настраиваем мок чтобы он выбрасывал RuntimeException
+        when(backendClient.getUserTeams(anyString(), anyString()))
+            .thenThrow(new RuntimeException("Backend error"));
+
+        // Должен вернуть пустой список
         var teams = userService.getUserTeams(TRACKER);
         assertNotNull(teams);
-        assertTrue(teams.isEmpty(), "Should return empty list when backend is unavailable");
+        assertTrue(teams.isEmpty(), "Should return empty list when backend throws exception");
+
+        // Возвращаем мок в исходное состояние
+        reset(backendClient);
+        when(backendClient.getUserTeams(anyString(), anyString()))
+            .thenReturn(java.util.Collections.emptyList());
+        doNothing().when(backendClient).reassignTeamsToRonin(any(), anyString());
     }
 
     // ==================== exists ====================
