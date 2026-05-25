@@ -1,4 +1,6 @@
-package net.trackme.meetingservice.services;
+
+/*package net.trackme.meetingservice.services;
+>>>>>>> 600d829e (Resolve conflict in MeetingServiceImpl.java)
 
 import net.trackme.commons.acl.AclService;
 import net.trackme.meetingservice.api.dto.MeetingDto;
@@ -305,3 +307,6 @@ class MeetingServiceImplSuperAdminTest {
         assertThat(MeetingStatus.COMPLETED.toString()).hasToString("COMPLETED");
     }
 }
+
+}*/
+
