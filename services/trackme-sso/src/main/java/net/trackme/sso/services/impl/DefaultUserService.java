@@ -1,10 +1,27 @@
 package net.trackme.sso.services.impl;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.trackme.commons.filters.FilterRequest;
+import static net.trackme.sso.dao.UserSpecification.byRole;
+import static net.trackme.sso.dao.UserSpecification.withFilters;
 import net.trackme.sso.dao.entity.RoleEntity;
 import net.trackme.sso.dao.entity.UserEntity;
 import net.trackme.sso.dao.repository.RoleRepository;
@@ -16,28 +33,9 @@ import net.trackme.sso.exception.EmailNotFoundException;
 import net.trackme.sso.exception.TeamReassignmentException;
 import net.trackme.sso.exception.WrongOldPasswordException;
 import net.trackme.sso.mapper.UserMapper;
+import net.trackme.sso.services.BackendClient;
 import net.trackme.sso.services.UserService;
 import net.trackme.sso.type.AuthErrorCode;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static net.trackme.sso.dao.UserSpecification.byRole;
-import static net.trackme.sso.dao.UserSpecification.withFilters;
 
 @Slf4j 
 @Service
@@ -53,8 +51,7 @@ public class DefaultUserService implements UserService {
   private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
-
-  private final RestClient restClient;
+  private final BackendClient backendClient;
 
   /**
    * Создание пользователя на основе регистрационных данных. Пользователь будет не активирован.
@@ -229,16 +226,9 @@ public class DefaultUserService implements UserService {
     try {
         String token = extractBearerToken();
         if (token == null || token.isEmpty()) {
-            log.error("No token available for getUserTeams");
             throw new TeamReassignmentException("No authentication token available");
         }
-        
-        return restClient.get()
-            .uri("/api/v1/admin/team-cards/by-user?username={username}", username)
-            .accept(MediaType.APPLICATION_JSON)
-            .header(AUTH_HEADER, BEARER_PREFIX + token)
-            .retrieve()
-            .body(new ParameterizedTypeReference<List<Map<String, String>>>() {});
+        return backendClient.getUserTeams(username, token);
     } catch (TeamReassignmentException e) {
         throw e;
     } catch (Exception e) {
@@ -334,7 +324,8 @@ public class DefaultUserService implements UserService {
           request.put("toUsername", RONIN);
           request.put("toUserFullName", roninUser.getFullName());
           
-          callReassignTeamsApi(request, token, username);
+          backendClient.reassignTeamsToRonin(request, token);
+          log.info("Teams reassigned from {} to ronin successfully", username);
           
       } catch (TeamReassignmentException e) {
           throw e;
@@ -343,27 +334,11 @@ public class DefaultUserService implements UserService {
       }
   }
 
-  private void callReassignTeamsApi(Map<String, String> request, String token, String username) {
-      try {
-          restClient.post()
-              .uri("/api/v1/admin/team-cards/reassign")
-              .contentType(MediaType.APPLICATION_JSON)
-              .header(AUTH_HEADER, BEARER_PREFIX + token)
-              .body(request)
-              .retrieve()
-              .toBodilessEntity();
-          log.info("Teams reassigned from {} to ronin successfully", username);
-      } catch (Exception e) {
-          log.warn("Backend service unavailable, skipping team reassignment for {}: {}", username, e.getMessage());
-      }
-  }
-
   private String extractBearerToken() {
       try {
           var requestAttributes = RequestContextHolder.getRequestAttributes();
           
           if (requestAttributes == null) {
-              log.warn("No request attributes available, returning mock token for test/background context");
               return "test-token-for-integration-tests";
           }
           
