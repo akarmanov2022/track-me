@@ -173,9 +173,9 @@ public class MeetingServiceImpl implements MeetingService {
                     + "or hasRole('ADMIN')")
     public MeetingDto updateMeeting(UUID meetingId, UUID teamCardId, MeetingUpdateDto updateDto) {
         log.info("updateMeeting called by user: {}",
-                SecurityContextHolder.getContext().getAuthentication().getName());
+         SecurityContextHolder.getContext().getAuthentication().getName());
         log.info("Authorities: {}",
-                SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+         SecurityContextHolder.getContext().getAuthentication().getAuthorities());
         var meeting = meetingRepository.findOne(teamCardIdEquals(teamCardId)
                         .and(meetingIdEquals(meetingId)))
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId, teamCardId));
@@ -192,7 +192,7 @@ public class MeetingServiceImpl implements MeetingService {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isSuperAdmin = authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_SUPER_ADMIN")
-                        || auth.getAuthority().equals("SUPER_ADMIN"));
+                              || auth.getAuthority().equals("SUPER_ADMIN"));
 
         // Если НЕ суперадмин и статус завершённый – запрещаем (старая логика)
         if (!isSuperAdmin && MeetingStatus.COMPLETED_STATUSES.contains(meeting.getStatus())) {
@@ -459,7 +459,7 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     @Transactional
     public MeetingDto updateBySuperAdmin(UUID meetingId, MeetingUpdateDto updateDto) {
-
+        
         // 1. Проверка роли суперадмина
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
