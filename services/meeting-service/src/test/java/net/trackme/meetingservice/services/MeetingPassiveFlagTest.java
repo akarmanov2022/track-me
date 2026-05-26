@@ -6,8 +6,12 @@ import net.trackme.meetingservice.dao.MeetingRepository;
 import net.trackme.meetingservice.entities.Meeting;
 import net.trackme.meetingservice.entities.MeetingStatus;
 import net.trackme.meetingservice.mapping.MeetingMapper;
+import net.trackme.meetingservice.services.exceptions.MeetingNotFoundException;
 import net.trackme.meetingservice.services.integration.backend.BackendApiClient;
+import net.trackme.meetingservice.services.integration.backend.dto.StreamDto;
 import net.trackme.meetingservice.services.integration.backend.dto.TeamCardDto;
+import net.trackme.meetingservice.services.integration.sso.SsoApiClient;
+import net.trackme.meetingservice.services.integration.sso.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +45,9 @@ class MeetingPassiveFlagTest {
 
     @Mock(name = "userBackendApiClient")
     private BackendApiClient userBackendClient;
+
+    @Mock
+    private SsoApiClient ssoApiClient;
 
     @Mock
     private SecurityContext securityContext;
@@ -64,7 +72,6 @@ class MeetingPassiveFlagTest {
 
     @Test
     void createMeeting_whenTeamIsPassiveAndUserIsNotAdmin_shouldThrowException() {
-        // Arrange
         MeetingCreateDto createDto = MeetingCreateDto.builder()
                 .startDate(now)
                 .build();
@@ -74,7 +81,7 @@ class MeetingPassiveFlagTest {
         teamCardDto.setPassive(true);
         teamCardDto.setUsername("tracker");
         teamCardDto.setName("Test Team");
-        teamCardDto.setStreams(Collections.emptyList());
+        teamCardDto.setStreams(new ArrayList<>());
 
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -88,10 +95,75 @@ class MeetingPassiveFlagTest {
         verify(meetingRepository, never()).save(any());
     }
 
+    @Test
+    void createMeeting_whenTeamIsActive_shouldSucceed() {
+        MeetingCreateDto createDto = MeetingCreateDto.builder()
+                .startDate(now)
+                .build();
+
+        StreamDto stream = new StreamDto();
+        stream.setId(UUID.randomUUID());
+
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(false);
+        teamCardDto.setUsername("tracker");
+        teamCardDto.setName("Active Team");
+        teamCardDto.setStreams(Collections.singletonList(stream));
+
+        UserDto trackerDto = UserDto.builder()
+                .id(UUID.randomUUID().toString())
+                .username("tracker")
+                .fullName("Tracker Full Name")
+                .build();
+
+        Meeting meeting = new Meeting();
+        meeting.setId(meetingId);
+        meeting.setTeamCardId(teamCardId);
+
+        Meeting savedMeeting = new Meeting();
+        savedMeeting.setId(meetingId);
+        savedMeeting.setTeamCardId(teamCardId);
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(ssoApiClient.getTrackers()).thenReturn(Collections.singletonList(trackerDto));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
+        when(meetingMapper.mapToEntity(createDto)).thenReturn(meeting);
+        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(savedMeeting);
+        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
+
+        assertDoesNotThrow(() -> meetingService.createMeeting(teamCardId, createDto));
+        verify(meetingRepository).saveAndFlush(any(Meeting.class));
+    }
+
+    @Test
+    void createMeeting_whenAuthenticationIsNull_shouldThrowException() {
+        MeetingCreateDto createDto = MeetingCreateDto.builder()
+                .startDate(now)
+                .build();
+
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(true);
+        teamCardDto.setUsername("tracker");
+        teamCardDto.setName("Test Team");
+        teamCardDto.setStreams(new ArrayList<>());
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(securityContext.getAuthentication()).thenReturn(null);
+
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
+            meetingService.createMeeting(teamCardId, createDto);
+        });
+
+        assertEquals("Трекер не может создавать встречи для пассивной команды", exception.getMessage());
+    }
+
 
 
     @Test
-    void updateMeeting_passiveTeam_notAdmin_throwsException() {
+    void updateMeeting_whenTeamIsPassiveAndUserIsNotAdmin_shouldThrowException() {
         MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
                 .tasksCurrentMeeting("Updated tasks")
                 .build();
@@ -110,11 +182,57 @@ class MeetingPassiveFlagTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
 
-        // Act & Assert - ЭТУ СТРОКУ ЗАМЕНИТЬ
         AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
             meetingService.updateMeeting(meetingId, teamCardId, updateDto);
         });
 
         assertEquals("Трекер не может редактировать встречи пассивной команды", exception.getMessage());
+        verify(meetingRepository, never()).save(any());
+    }
+
+    @Test
+    void updateMeeting_whenTeamIsActive_shouldSucceed() {
+        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
+                .tasksCurrentMeeting("Updated tasks")
+                .build();
+
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(false);
+
+        Meeting existingMeeting = new Meeting();
+        existingMeeting.setId(meetingId);
+        existingMeeting.setTeamCardId(teamCardId);
+        existingMeeting.setStatus(MeetingStatus.SCHEDULED);
+        existingMeeting.setStartDate(now);
+
+        Meeting updatedMeeting = new Meeting();
+        updatedMeeting.setId(meetingId);
+        updatedMeeting.setTeamCardId(teamCardId);
+        updatedMeeting.setStatus(MeetingStatus.SCHEDULED);
+        updatedMeeting.setStartDate(now);
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
+        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(updatedMeeting);
+        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(updatedMeeting));
+
+        assertDoesNotThrow(() -> meetingService.updateMeeting(meetingId, teamCardId, updateDto));
+        verify(meetingRepository).saveAndFlush(any(Meeting.class));
+    }
+
+    @Test
+    void updateMeeting_whenMeetingNotFound_shouldThrowException() {
+        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
+                .tasksCurrentMeeting("Updated tasks")
+                .build();
+
+        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.empty());
+
+        assertThrows(MeetingNotFoundException.class, () -> {
+            meetingService.updateMeeting(meetingId, teamCardId, updateDto);
+        });
     }
 }
