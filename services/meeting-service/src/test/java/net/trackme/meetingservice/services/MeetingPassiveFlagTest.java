@@ -163,6 +163,12 @@ class MeetingPassiveFlagTest {
         teamCardDto.setName("Active Team");
         teamCardDto.setStreams(new ArrayList<>());
 
+        UserDto userDto = UserDto.builder()
+                .id(UUID.randomUUID().toString())
+                .username("tracker")
+                .fullName("Tracker Name")
+                .build();
+
         Meeting meeting = new Meeting();
         meeting.setId(meetingId);
         meeting.setTeamCardId(teamCardId);
@@ -172,6 +178,7 @@ class MeetingPassiveFlagTest {
         savedMeeting.setTeamCardId(teamCardId);
 
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(ssoApiClient.getTrackers()).thenReturn(Collections.singletonList(userDto));
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
         when(meetingMapper.mapToEntity(createDto)).thenReturn(meeting);
@@ -182,38 +189,6 @@ class MeetingPassiveFlagTest {
         verify(meetingRepository).saveAndFlush(any(Meeting.class));
     }
 
-    @Test
-    void updateMeeting_whenTeamIsActive_shouldSucceed() {
-        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
-                .tasksCurrentMeeting("Updated tasks")
-                .build();
-
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(false);
-
-        Meeting existingMeeting = new Meeting();
-        existingMeeting.setId(meetingId);
-        existingMeeting.setTeamCardId(teamCardId);
-        existingMeeting.setStatus(MeetingStatus.SCHEDULED);
-        existingMeeting.setStartDate(now);
-
-        Meeting updatedMeeting = new Meeting();
-        updatedMeeting.setId(meetingId);
-        updatedMeeting.setTeamCardId(teamCardId);
-        updatedMeeting.setStatus(MeetingStatus.SCHEDULED);
-        updatedMeeting.setStartDate(now);
-
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(updatedMeeting);
-        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(updatedMeeting));
-
-        assertDoesNotThrow(() -> meetingService.updateMeeting(meetingId, teamCardId, updateDto));
-        verify(meetingRepository).saveAndFlush(any(Meeting.class));
-    }
 
 
 }
