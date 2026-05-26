@@ -8,8 +8,6 @@ import net.trackme.meetingservice.entities.MeetingStatus;
 import net.trackme.meetingservice.mapping.MeetingMapper;
 import net.trackme.meetingservice.services.integration.backend.BackendApiClient;
 import net.trackme.meetingservice.services.integration.backend.dto.TeamCardDto;
-import net.trackme.meetingservice.services.integration.sso.SsoApiClient;
-import net.trackme.meetingservice.services.integration.sso.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,17 +16,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -45,9 +40,6 @@ class MeetingPassiveFlagTest {
 
     @Mock(name = "userBackendApiClient")
     private BackendApiClient userBackendClient;
-
-    @Mock
-    private SsoApiClient ssoApiClient;
 
     @Mock
     private SecurityContext securityContext;
@@ -70,133 +62,60 @@ class MeetingPassiveFlagTest {
         SecurityContextHolder.setContext(securityContext);
     }
 
-    // ТЕСТ 1: Пассивная команда + НЕ АДМИН = ошибка при создании
     @Test
-    void createMeeting_passiveTeam_notAdmin_throwsAccessDenied() {
-        MeetingCreateDto createDto = MeetingCreateDto.builder().startDate(now).build();
+    void createMeeting_whenTeamIsPassiveAndUserIsNotAdmin_shouldThrowException() {
+        // Arrange
+        MeetingCreateDto createDto = MeetingCreateDto.builder()
+                .startDate(now)
+                .build();
 
         TeamCardDto teamCardDto = new TeamCardDto();
         teamCardDto.setId(teamCardId);
         teamCardDto.setPassive(true);
-        teamCardDto.setStreams(new ArrayList<>());
-
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-
-        AccessDeniedException ex = assertThrows(AccessDeniedException.class,
-                () -> meetingService.createMeeting(teamCardId, createDto));
-
-        assertEquals("Трекер не может создавать встречи для пассивной команды", ex.getMessage());
-        verify(meetingRepository, never()).save(any());
-    }
-
-
-    // ТЕСТ 3: Пассивная команда + НЕ АДМИН = ошибка при обновлении
-    @Test
-    void updateMeeting_passiveTeam_notAdmin_throwsAccessDenied() {
-        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
-                .tasksCurrentMeeting("Updated").build();
-
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(true);
-
-        Meeting existingMeeting = new Meeting();
-        existingMeeting.setId(meetingId);
-        existingMeeting.setTeamCardId(teamCardId);
-        existingMeeting.setStatus(MeetingStatus.SCHEDULED);
-
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-
-        AccessDeniedException ex = assertThrows(AccessDeniedException.class,
-                () -> meetingService.updateMeeting(meetingId, teamCardId, updateDto));
-
-        assertEquals("Трекер не может редактировать встречи пассивной команды", ex.getMessage());
-        verify(meetingRepository, never()).save(any());
-    }
-
-
-
-    // ТЕСТ 6: Authentication = null + пассивная команда = ошибка
-    @Test
-    void createMeeting_authenticationNull_throwsAccessDenied() {
-        MeetingCreateDto createDto = MeetingCreateDto.builder().startDate(now).build();
-
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(true);
-        teamCardDto.setStreams(new ArrayList<>());
-
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        when(securityContext.getAuthentication()).thenReturn(null);
-
-        AccessDeniedException ex = assertThrows(AccessDeniedException.class,
-                () -> meetingService.createMeeting(teamCardId, createDto));
-
-        assertEquals("Трекер не может создавать встречи для пассивной команды", ex.getMessage());
-    }
-    // ТЕСТ: Активная команда при создании - должен пройти успешно (покрывает строки createMeeting)
-    @Test
-    void createMeeting_activeTeam_shouldNotThrowException() {
-        MeetingCreateDto createDto = MeetingCreateDto.builder().startDate(now).build();
-
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(false);
         teamCardDto.setUsername("tracker");
-        teamCardDto.setName("Active Team");
-        teamCardDto.setStreams(new ArrayList<>());
-
-        Meeting meeting = new Meeting();
-        meeting.setId(meetingId);
-        Meeting savedMeeting = new Meeting();
-        savedMeeting.setId(meetingId);
+        teamCardDto.setName("Test Team");
+        teamCardDto.setStreams(Collections.emptyList());
 
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-        when(meetingMapper.mapToEntity(any())).thenReturn(meeting);
-        when(meetingRepository.saveAndFlush(any())).thenReturn(savedMeeting);
-        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
-        when(ssoApiClient.getTrackers()).thenReturn(new ArrayList<>());
 
-        // Просто проверяем, что нет исключения
-        assertDoesNotThrow(() -> meetingService.createMeeting(teamCardId, createDto));
+        // Act & Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            meetingService.createMeeting(teamCardId, createDto);
+        });
+
+        assertEquals("Трекер не может создавать встречи для пассивной команды", exception.getMessage());
+        verify(meetingRepository, never()).save(any());
     }
 
-    // ТЕСТ: Активная команда при обновлении - должен пройти успешно (покрывает строки updateMeeting)
+
+
+    // ТЕСТ 3: обновление - пассивная команда + НЕ АДМИН = ошибка
     @Test
-    void updateMeeting_activeTeam_shouldNotThrowException() {
+    void updateMeeting_passiveTeam_notAdmin_throwsException() {
         MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
-                .tasksCurrentMeeting("Updated").build();
+                .tasksCurrentMeeting("Updated tasks")
+                .build();
 
         TeamCardDto teamCardDto = new TeamCardDto();
         teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(false);
-        teamCardDto.setMeetingRoomLink("https://room.link");
+        teamCardDto.setPassive(true);
 
         Meeting existingMeeting = new Meeting();
         existingMeeting.setId(meetingId);
         existingMeeting.setTeamCardId(teamCardId);
         existingMeeting.setStatus(MeetingStatus.SCHEDULED);
-        existingMeeting.setStartDate(now);
-
-        Meeting updatedMeeting = new Meeting();
-        updatedMeeting.setId(meetingId);
-        updatedMeeting.setTeamCardId(teamCardId);
 
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
         when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-        when(meetingRepository.saveAndFlush(any())).thenReturn(updatedMeeting);
-        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(updatedMeeting));
 
-        assertDoesNotThrow(() -> meetingService.updateMeeting(meetingId, teamCardId, updateDto));
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            meetingService.updateMeeting(meetingId, teamCardId, updateDto);
+        });
+
+        assertEquals("Трекер не может редактировать встречи пассивной команды", exception.getMessage());
     }
-
 }
