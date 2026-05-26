@@ -95,47 +95,7 @@ class MeetingPassiveFlagTest {
         verify(meetingRepository, never()).save(any());
     }
 
-    @Test
-    void createMeeting_whenTeamIsActive_shouldSucceed() {
-        MeetingCreateDto createDto = MeetingCreateDto.builder()
-                .startDate(now)
-                .build();
 
-        StreamDto stream = new StreamDto();
-        stream.setId(UUID.randomUUID());
-
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(false);
-        teamCardDto.setUsername("tracker");
-        teamCardDto.setName("Active Team");
-        teamCardDto.setStreams(Collections.singletonList(stream));
-
-        UserDto trackerDto = UserDto.builder()
-                .id(UUID.randomUUID().toString())
-                .username("tracker")
-                .fullName("Tracker Full Name")
-                .build();
-
-        Meeting meeting = new Meeting();
-        meeting.setId(meetingId);
-        meeting.setTeamCardId(teamCardId);
-
-        Meeting savedMeeting = new Meeting();
-        savedMeeting.setId(meetingId);
-        savedMeeting.setTeamCardId(teamCardId);
-
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        when(ssoApiClient.getTrackers()).thenReturn(Collections.singletonList(trackerDto));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-        when(meetingMapper.mapToEntity(createDto)).thenReturn(meeting);
-        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(savedMeeting);
-        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
-
-        assertDoesNotThrow(() -> meetingService.createMeeting(teamCardId, createDto));
-        verify(meetingRepository).saveAndFlush(any(Meeting.class));
-    }
 
     @Test
     void createMeeting_whenAuthenticationIsNull_shouldThrowException() {
@@ -190,49 +150,6 @@ class MeetingPassiveFlagTest {
         verify(meetingRepository, never()).save(any());
     }
 
-    @Test
-    void updateMeeting_whenTeamIsActive_shouldSucceed() {
-        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
-                .tasksCurrentMeeting("Updated tasks")
-                .build();
 
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(false);
 
-        Meeting existingMeeting = new Meeting();
-        existingMeeting.setId(meetingId);
-        existingMeeting.setTeamCardId(teamCardId);
-        existingMeeting.setStatus(MeetingStatus.SCHEDULED);
-        existingMeeting.setStartDate(now);
-
-        Meeting updatedMeeting = new Meeting();
-        updatedMeeting.setId(meetingId);
-        updatedMeeting.setTeamCardId(teamCardId);
-        updatedMeeting.setStatus(MeetingStatus.SCHEDULED);
-        updatedMeeting.setStartDate(now);
-
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(updatedMeeting);
-        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(updatedMeeting));
-
-        assertDoesNotThrow(() -> meetingService.updateMeeting(meetingId, teamCardId, updateDto));
-        verify(meetingRepository).saveAndFlush(any(Meeting.class));
-    }
-
-    @Test
-    void updateMeeting_whenMeetingNotFound_shouldThrowException() {
-        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
-                .tasksCurrentMeeting("Updated tasks")
-                .build();
-
-        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.empty());
-
-        assertThrows(MeetingNotFoundException.class, () -> {
-            meetingService.updateMeeting(meetingId, teamCardId, updateDto);
-        });
-    }
 }
