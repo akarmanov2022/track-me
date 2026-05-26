@@ -75,18 +75,24 @@ public class TeamCardsUseCase {
                                       TeamCardUpdateDto createOrUpdateDto) {
         var existingTeamCard = teamCardsService.getTeamCard(teamCardId);
 
-        // ПРОВЕРКА: если команда пассивна, проверить роль пользователя
-        if (existingTeamCard.getPassive() != null && existingTeamCard.getPassive()) {
-            // Получаем роль текущего пользователя
-            var auth = SecurityContextHolder.getContext().getAuthentication();
-            boolean isAdmin = auth.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") ||
-                            a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        // Получаем роль текущего пользователя
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") ||
+                        a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
-            if (!isAdmin) {
-                throw new IllegalStateException("Нельзя редактировать пассивную команду.");
-            }
+        // ПРОВЕРКА 1: Изменять пассивный статус может только ADMIN/SUPER_ADMIN
+        if (createOrUpdateDto.passive() != null && !isAdmin) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Только администратор может изменять пассивный статус команды.");
         }
+
+        // ПРОВЕРКА 2: Если команда уже пассивна — редактировать её может только ADMIN/SUPER_ADMIN
+        if (Boolean.TRUE.equals(existingTeamCard.getPassive()) && !isAdmin) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Нельзя редактировать пассивную команду.");
+        }
+
         var ntiMarketIds = createOrUpdateDto.ntiMarketIds();
         var teamCard = teamCardMapper.mapToEntity(createOrUpdateDto);
         var ntiMarkets = ntiMarketService.getNtiMarkets(ntiMarketIds);

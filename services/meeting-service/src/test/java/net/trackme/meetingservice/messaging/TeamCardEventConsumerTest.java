@@ -34,7 +34,7 @@ class TeamCardEventConsumerTest {
     void handleTeamCardUpdated_withNewTracker_trackerFoundInSso() {
         UUID teamId = UUID.randomUUID();
         String username = "new_tracker";
-        Boolean newPassive = true; // 👈 Добавили проверку на true/false
+        Boolean newPassive = true;
         var event = new TeamCardUpdatedEvent(teamId, "New Name", username, newPassive, "Ivan Ivanov");
 
         var tracker = UserDto.builder()
@@ -47,7 +47,6 @@ class TeamCardEventConsumerTest {
 
         teamCardEventConsumer.handleTeamCardUpdated(event);
 
-        // 👇 ДОБАВИТЬ ЭТУ СТРОКУ
         verify(metadataRepository).updatePassiveFlag(teamId, newPassive);
 
         verify(metadataRepository).updateMetadata(

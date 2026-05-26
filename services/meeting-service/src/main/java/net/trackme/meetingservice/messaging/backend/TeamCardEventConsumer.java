@@ -63,7 +63,9 @@ public class TeamCardEventConsumer {
             }
         }
 
-        metadataRepository.updatePassiveFlag(event.teamCardId(), event.newPassive());
+        if (event.newPassive() != null) {
+            metadataRepository.updatePassiveFlag(event.teamCardId(), event.newPassive());
+        }
 
         metadataRepository.updateMetadata(
                 event.teamCardId(),

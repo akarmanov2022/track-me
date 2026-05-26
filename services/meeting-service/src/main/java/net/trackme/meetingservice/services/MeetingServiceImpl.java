@@ -108,17 +108,19 @@ public class MeetingServiceImpl implements MeetingService {
     public MeetingDto createMeeting(UUID teamCardId, MeetingCreateDto createDto) {
         validateNoMeetingOnSameDay(teamCardId, createDto.startDate(), null);
 
-        // 👇 НОВАЯ ПРОВЕРКА ДЛЯ ПАССИВНОГО СТАТУСА
-        var teamDataForCheck = userBackendClient.getTeamCardById(teamCardId);
-        var currentRole = getCurrentUserRole();
-        boolean isAdmin = "ADMIN".equals(currentRole) || "SUPER_ADMIN".equals(currentRole);
+        var teamData = userBackendClient.getTeamCardById(teamCardId);
 
-        if (teamDataForCheck.getPassive() != null && teamDataForCheck.getPassive() && !isAdmin) {
-            throw new IllegalStateException("Трекер не может создавать встречи для пассивной команды");
+        if (Boolean.TRUE.equals(teamData.getPassive())) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") ||
+                            a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+            if (!isAdmin) {
+                throw new AccessDeniedException("Трекер не может создавать встречи для пассивной команды");
+            }
         }
 
         var meeting = meetingMapper.mapToEntity(createDto);
-        var teamData = userBackendClient.getTeamCardById(teamCardId);
         var trackerUsername = teamData.getUsername();
 
         meeting.setTeamCardId(teamCardId);
@@ -181,11 +183,15 @@ public class MeetingServiceImpl implements MeetingService {
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId, teamCardId));
 
         var teamData = userBackendClient.getTeamCardById(teamCardId);
-        var currentRole = getCurrentUserRole();
-        boolean isAdmin = "ADMIN".equals(currentRole) || "SUPER_ADMIN".equals(currentRole);
 
-        if (teamData.getPassive() != null && teamData.getPassive() && !isAdmin) {
-            throw new IllegalStateException("Трекер не может редактировать встречи пассивной команды");
+        if (Boolean.TRUE.equals(teamData.getPassive())) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") ||
+                            a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+            if (!isAdmin) {
+                throw new AccessDeniedException("Трекер не может редактировать встречи пассивной команды");
+            }
         }
 
         // Получаем текущего пользователя и проверяем роль
@@ -503,12 +509,4 @@ public class MeetingServiceImpl implements MeetingService {
         return meetingMapper.mapToDto(savedMeeting);
     }
 
-    private String getCurrentUserRole() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) return null;
-        return authentication.getAuthorities().stream()
-                .map(a -> a.getAuthority().replace("ROLE_", ""))
-                .findFirst()
-                .orElse(null);
-    }
 }
