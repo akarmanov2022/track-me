@@ -117,7 +117,6 @@ class MeetingPassiveFlagTest {
         verify(meetingRepository, never()).save(any());
     }
 
-    // ТЕСТ 4: Активная команда = успех при создании
     @Test
     void createMeeting_activeTeam_success() {
         MeetingCreateDto createDto = MeetingCreateDto.builder().startDate(now).build();
@@ -134,8 +133,9 @@ class MeetingPassiveFlagTest {
         Meeting savedMeeting = new Meeting();
         savedMeeting.setId(meetingId);
 
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        // Мок для SSO - возвращаем пустой список, чтобы не было NPE
         when(ssoApiClient.getTrackers()).thenReturn(new ArrayList<>());
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
         when(meetingMapper.mapToEntity(any(MeetingCreateDto.class))).thenReturn(meeting);
@@ -146,7 +146,6 @@ class MeetingPassiveFlagTest {
         verify(meetingRepository).saveAndFlush(any(Meeting.class));
     }
 
-    // ТЕСТ 5: Активная команда = успех при обновлении
     @Test
     void updateMeeting_activeTeam_success() {
         MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
@@ -155,6 +154,7 @@ class MeetingPassiveFlagTest {
         TeamCardDto teamCardDto = new TeamCardDto();
         teamCardDto.setId(teamCardId);
         teamCardDto.setPassive(false);
+        teamCardDto.setMeetingRoomLink("https://room.link"); // Добавлено для fetchRoomLink
 
         Meeting existingMeeting = new Meeting();
         existingMeeting.setId(meetingId);
@@ -165,7 +165,10 @@ class MeetingPassiveFlagTest {
         Meeting updatedMeeting = new Meeting();
         updatedMeeting.setId(meetingId);
         updatedMeeting.setTeamCardId(teamCardId);
+        updatedMeeting.setStatus(MeetingStatus.SCHEDULED);
+        updatedMeeting.setStartDate(now);
 
+        // Дополнительный мок для fetchRoomLink (вызывается в конце updateMeeting)
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
         when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
         when(securityContext.getAuthentication()).thenReturn(authentication);
