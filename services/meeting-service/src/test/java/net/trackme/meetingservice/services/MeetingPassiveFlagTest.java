@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -119,7 +120,9 @@ class MeetingPassiveFlagTest {
 
     @Test
     void createMeeting_activeTeam_success() {
-        MeetingCreateDto createDto = MeetingCreateDto.builder().startDate(now).build();
+        MeetingCreateDto createDto = MeetingCreateDto.builder()
+                .startDate(now)
+                .build();
 
         TeamCardDto teamCardDto = new TeamCardDto();
         teamCardDto.setId(teamCardId);
@@ -128,14 +131,20 @@ class MeetingPassiveFlagTest {
         teamCardDto.setName("Active Team");
         teamCardDto.setStreams(new ArrayList<>());
 
+        // Мок для SSO - ВАЖНО!
+        UserDto userDto = UserDto.builder()
+                .id(UUID.randomUUID().toString())
+                .username("tracker")
+                .fullName("Tracker Name")
+                .build();
+
         Meeting meeting = new Meeting();
         meeting.setId(meetingId);
         Meeting savedMeeting = new Meeting();
         savedMeeting.setId(meetingId);
 
-        // Мок для SSO - возвращаем пустой список, чтобы не было NPE
-        when(ssoApiClient.getTrackers()).thenReturn(new ArrayList<>());
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(ssoApiClient.getTrackers()).thenReturn(List.of(userDto));  // <-- ЭТОТ МОК БЫЛ ПРОПУЩЕН
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
         when(meetingMapper.mapToEntity(any(MeetingCreateDto.class))).thenReturn(meeting);
@@ -149,12 +158,13 @@ class MeetingPassiveFlagTest {
     @Test
     void updateMeeting_activeTeam_success() {
         MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
-                .tasksCurrentMeeting("Updated").build();
+                .tasksCurrentMeeting("Updated")
+                .build();
 
         TeamCardDto teamCardDto = new TeamCardDto();
         teamCardDto.setId(teamCardId);
         teamCardDto.setPassive(false);
-        teamCardDto.setMeetingRoomLink("https://room.link"); // Добавлено для fetchRoomLink
+        teamCardDto.setMeetingRoomLink("https://room.link"); // для fetchRoomLink
 
         Meeting existingMeeting = new Meeting();
         existingMeeting.setId(meetingId);
@@ -168,7 +178,6 @@ class MeetingPassiveFlagTest {
         updatedMeeting.setStatus(MeetingStatus.SCHEDULED);
         updatedMeeting.setStartDate(now);
 
-        // Дополнительный мок для fetchRoomLink (вызывается в конце updateMeeting)
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
         when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
         when(securityContext.getAuthentication()).thenReturn(authentication);
