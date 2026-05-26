@@ -150,6 +150,17 @@ class MeetingPassiveFlagTest {
         verify(meetingRepository, never()).save(any());
     }
 
+    @Test
+    void updateMeeting_whenMeetingNotFound_shouldThrowException() {
+        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
+                .tasksCurrentMeeting("Updated tasks")
+                .build();
 
+        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.empty());
+
+        assertThrows(MeetingNotFoundException.class, () -> {
+            meetingService.updateMeeting(meetingId, teamCardId, updateDto);
+        });
+    }
 
 }
