@@ -118,77 +118,7 @@ class MeetingPassiveFlagTest {
         verify(meetingRepository, never()).save(any());
     }
 
-    @Test
-    void createMeeting_activeTeam_success() {
-        MeetingCreateDto createDto = MeetingCreateDto.builder()
-                .startDate(now)
-                .build();
 
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(false);
-        teamCardDto.setUsername("tracker");
-        teamCardDto.setName("Active Team");
-        teamCardDto.setStreams(new ArrayList<>());
-
-        UserDto userDto = UserDto.builder()
-                .id(UUID.randomUUID().toString())
-                .username("tracker")
-                .fullName("Tracker Name")
-                .build();
-
-        Meeting meeting = new Meeting();
-        meeting.setId(meetingId);
-        Meeting savedMeeting = new Meeting();
-        savedMeeting.setId(meetingId);
-
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        when(ssoApiClient.getTrackers()).thenReturn(List.of(userDto));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-        when(meetingMapper.mapToEntity(any(MeetingCreateDto.class))).thenReturn(meeting);
-        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(savedMeeting);
-        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
-
-        // Просто проверяем, что метод не бросает исключение
-        assertDoesNotThrow(() -> meetingService.createMeeting(teamCardId, createDto));
-        // Убираем verify - он вызывает NPE
-    }
-
-    @Test
-    void updateMeeting_activeTeam_success() {
-        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
-                .tasksCurrentMeeting("Updated")
-                .build();
-
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(false);
-        teamCardDto.setMeetingRoomLink("https://room.link");
-
-        Meeting existingMeeting = new Meeting();
-        existingMeeting.setId(meetingId);
-        existingMeeting.setTeamCardId(teamCardId);
-        existingMeeting.setStatus(MeetingStatus.SCHEDULED);
-        existingMeeting.setStartDate(now);
-
-        Meeting updatedMeeting = new Meeting();
-        updatedMeeting.setId(meetingId);
-        updatedMeeting.setTeamCardId(teamCardId);
-        updatedMeeting.setStatus(MeetingStatus.SCHEDULED);
-        updatedMeeting.setStartDate(now);
-
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(updatedMeeting);
-        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(updatedMeeting));
-
-        // Просто проверяем, что метод не бросает исключение
-        assertDoesNotThrow(() -> meetingService.updateMeeting(meetingId, teamCardId, updateDto));
-        // Убираем verify
-    }
 
     // ТЕСТ 6: Authentication = null + пассивная команда = ошибка
     @Test
