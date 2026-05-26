@@ -118,4 +118,24 @@ class MeetingPassiveFlagTest {
         assertEquals("Трекер не может редактировать встречи пассивной команды", ex.getMessage());
         verify(meetingRepository, never()).save(any());
     }
+
+    @Test
+    void createMeeting_whenAuthenticationIsNull_shouldThrowAccessDenied() {
+        MeetingCreateDto createDto = MeetingCreateDto.builder().startDate(now).build();
+
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(true);
+        teamCardDto.setUsername("tracker");
+        teamCardDto.setName("Test Team");
+        teamCardDto.setStreams(new ArrayList<>());
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(securityContext.getAuthentication()).thenReturn(null);
+
+        AccessDeniedException ex = assertThrows(AccessDeniedException.class,
+                () -> meetingService.createMeeting(teamCardId, createDto));
+
+        assertEquals("Трекер не может создавать встречи для пассивной команды", ex.getMessage());
+    }
 }
