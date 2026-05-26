@@ -49,4 +49,66 @@ class MeetingTest {
 
         assertEquals(BigDecimal.valueOf(-1.0), meeting.getTeamStatusValue());
     }
+
+    @Test
+    void updateTeamStatusValue_whenNotPassiveAndStatusWithIssues_shouldSetZeroPointFive() {
+        Meeting meeting = Meeting.builder()
+                .teamCardPassive(false)
+                .teamStatus(TeamStatus.WITH_ISSUES)
+                .build();
+
+        meeting.updateTeamStatusValue();
+
+        assertEquals(BigDecimal.valueOf(0.5), meeting.getTeamStatusValue());
+    }
+
+    @Test
+    void updateTeamStatusValue_whenNotPassiveAndStatusManyIssues_shouldSetZeroPointTwoFive() {
+        Meeting meeting = Meeting.builder()
+                .teamCardPassive(false)
+                .teamStatus(TeamStatus.MANY_ISSUES)
+                .build();
+
+        meeting.updateTeamStatusValue();
+
+        assertEquals(BigDecimal.valueOf(0.25), meeting.getTeamStatusValue());
+    }
+
+    @Test
+    void updateTeamStatusValue_whenNotPassiveAndStatusScheduled_shouldSetZero() {
+        Meeting meeting = Meeting.builder()
+                .teamCardPassive(false)
+                .status(MeetingStatus.SCHEDULED)
+                .build();
+
+        meeting.updateTeamStatusValue();
+
+        assertEquals(BigDecimal.valueOf(0.0), meeting.getTeamStatusValue());
+    }
+
+    @Test
+    void updateTeamStatusValue_whenNotPassiveAndTeamStatusNull_shouldSetZero() {
+        Meeting meeting = Meeting.builder()
+                .teamCardPassive(false)
+                .teamStatus(null)
+                .build();
+
+        meeting.updateTeamStatusValue();
+
+        assertEquals(BigDecimal.valueOf(0.0), meeting.getTeamStatusValue());
+    }
+
+    @Test
+    void teamCardPassive_defaultValueIsFalse() {
+        Meeting meeting = new Meeting();
+        assertFalse(meeting.getTeamCardPassive());
+    }
+
+    @Test
+    void teamCardPassive_canBeSetToTrue() {
+        Meeting meeting = Meeting.builder()
+                .teamCardPassive(true)
+                .build();
+        assertTrue(meeting.getTeamCardPassive());
+    }
 }
