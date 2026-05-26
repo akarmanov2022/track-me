@@ -132,5 +132,5 @@ public interface MeetingMetadataRepository extends JpaRepository<Meeting, UUID> 
      */
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Meeting m SET m.teamCardPassive = :passive WHERE m.teamCardId = :teamId")
-    void updatePassiveFlag(@Param("teamId") UUID teamId, @Param("passive") Boolean passive);
+    void updatePassiveFlag(@Param("teamId") UUID teamId, @Param("passive") boolean passive);
 }
