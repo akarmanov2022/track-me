@@ -140,8 +140,10 @@ class MeetingPassiveFlagTest {
     }
 
     @Test
-    void createMeeting_whenTeamIsActive_shouldSucceed() {
-        MeetingCreateDto createDto = MeetingCreateDto.builder().startDate(now).build();
+    void createMeeting_activeTeam_shouldSucceed() {
+        MeetingCreateDto createDto = MeetingCreateDto.builder()
+                .startDate(now)
+                .build();
 
         TeamCardDto teamCardDto = new TeamCardDto();
         teamCardDto.setId(teamCardId);
@@ -158,7 +160,7 @@ class MeetingPassiveFlagTest {
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-        when(meetingMapper.mapToEntity(createDto)).thenReturn(meeting);
+        when(meetingMapper.mapToEntity(any(MeetingCreateDto.class))).thenReturn(meeting);
         when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(savedMeeting);
         when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
 
@@ -167,9 +169,10 @@ class MeetingPassiveFlagTest {
     }
 
     @Test
-    void updateMeeting_whenTeamIsActive_shouldSucceed() {
+    void updateMeeting_activeTeam_shouldSucceed() {
         MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
-                .tasksCurrentMeeting("Updated").build();
+                .tasksCurrentMeeting("Updated")
+                .build();
 
         TeamCardDto teamCardDto = new TeamCardDto();
         teamCardDto.setId(teamCardId);
