@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -138,4 +139,64 @@ class MeetingPassiveFlagTest {
 
         assertEquals("Трекер не может создавать встречи для пассивной команды", ex.getMessage());
     }
+    // ТЕСТ: Активная команда при создании - должен пройти успешно (покрывает строки createMeeting)
+    @Test
+    void createMeeting_activeTeam_shouldNotThrowException() {
+        MeetingCreateDto createDto = MeetingCreateDto.builder().startDate(now).build();
+
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(false);
+        teamCardDto.setUsername("tracker");
+        teamCardDto.setName("Active Team");
+        teamCardDto.setStreams(new ArrayList<>());
+
+        Meeting meeting = new Meeting();
+        meeting.setId(meetingId);
+        Meeting savedMeeting = new Meeting();
+        savedMeeting.setId(meetingId);
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
+        when(meetingMapper.mapToEntity(any())).thenReturn(meeting);
+        when(meetingRepository.saveAndFlush(any())).thenReturn(savedMeeting);
+        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
+        when(ssoApiClient.getTrackers()).thenReturn(new ArrayList<>());
+
+        // Просто проверяем, что нет исключения
+        assertDoesNotThrow(() -> meetingService.createMeeting(teamCardId, createDto));
+    }
+
+    // ТЕСТ: Активная команда при обновлении - должен пройти успешно (покрывает строки updateMeeting)
+    @Test
+    void updateMeeting_activeTeam_shouldNotThrowException() {
+        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
+                .tasksCurrentMeeting("Updated").build();
+
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(false);
+        teamCardDto.setMeetingRoomLink("https://room.link");
+
+        Meeting existingMeeting = new Meeting();
+        existingMeeting.setId(meetingId);
+        existingMeeting.setTeamCardId(teamCardId);
+        existingMeeting.setStatus(MeetingStatus.SCHEDULED);
+        existingMeeting.setStartDate(now);
+
+        Meeting updatedMeeting = new Meeting();
+        updatedMeeting.setId(meetingId);
+        updatedMeeting.setTeamCardId(teamCardId);
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
+        when(meetingRepository.saveAndFlush(any())).thenReturn(updatedMeeting);
+        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(updatedMeeting));
+
+        assertDoesNotThrow(() -> meetingService.updateMeeting(meetingId, teamCardId, updateDto));
+    }
+
 }
