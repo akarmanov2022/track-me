@@ -16,9 +16,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -80,8 +80,7 @@ class MeetingPassiveFlagTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
 
-        // Act & Assert
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
             meetingService.createMeeting(teamCardId, createDto);
         });
 
@@ -91,7 +90,6 @@ class MeetingPassiveFlagTest {
 
 
 
-    // ТЕСТ 3: обновление - пассивная команда + НЕ АДМИН = ошибка
     @Test
     void updateMeeting_passiveTeam_notAdmin_throwsException() {
         MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
@@ -112,7 +110,8 @@ class MeetingPassiveFlagTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        // Act & Assert - ЭТУ СТРОКУ ЗАМЕНИТЬ
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
             meetingService.updateMeeting(meetingId, teamCardId, updateDto);
         });
 
