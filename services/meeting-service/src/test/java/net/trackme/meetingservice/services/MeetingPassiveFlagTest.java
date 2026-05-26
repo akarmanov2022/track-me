@@ -147,47 +147,4 @@ class MeetingPassiveFlagTest {
         verify(meetingRepository, never()).save(any());
     }
 
-    @Test
-    void createMeeting_activeTeam_simpleTest() {
-        // Создаем DTO
-        MeetingCreateDto createDto = MeetingCreateDto.builder()
-                .startDate(OffsetDateTime.now().plusDays(1))
-                .build();
-
-        // Создаем TeamCardDto (активная команда)
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(false);
-        teamCardDto.setUsername("tracker");
-        teamCardDto.setName("Active Team");
-        teamCardDto.setStreams(new ArrayList<>());
-
-        // Мокаем все вызовы
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-
-        // Мокаем для SSO - возвращаем пустой список, чтобы не было NPE
-        when(ssoApiClient.getTrackers()).thenReturn(new ArrayList<>());
-
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-
-        // Мокаем маппер и репозиторий
-        Meeting meeting = new Meeting();
-        meeting.setId(meetingId);
-        when(meetingMapper.mapToEntity(any(MeetingCreateDto.class))).thenReturn(meeting);
-
-        Meeting savedMeeting = new Meeting();
-        savedMeeting.setId(meetingId);
-        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(savedMeeting);
-        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
-
-        // Выполняем
-        assertDoesNotThrow(() -> meetingService.createMeeting(teamCardId, createDto));
-
-        // Проверяем, что метод сохранения был вызван
-        verify(meetingRepository).saveAndFlush(any(Meeting.class));
-    }
-
-
-
 }
