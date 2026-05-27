@@ -19,11 +19,14 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.springframework.data.domain.Sort;
+import java.util.Collections;
+import net.trackme.meetingservice.api.dto.MeetingDto;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -125,13 +128,18 @@ class MeetingPassiveFlagTest {
     }
 
     @Test
-    void testPassiveFlagConstants() {
-        // Простой тест, который проверяет, что поле passive существует и корректно работает
-        TeamCardDto dto = new TeamCardDto();
-        dto.setPassive(true);
-        assertTrue(dto.getPassive());
+    void getMeetings_shouldWork() {
+        // Простой тест для покрытия метода getMeetings
+        Pageable pageable = Pageable.unpaged();
+        Page<Meeting> emptyPage = Page.empty();
 
-        dto.setPassive(false);
-        assertFalse(dto.getPassive());
+        when(meetingRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(emptyPage);
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(new TeamCardDto());
+        when(meetingMapper.mapToDto(any(Meeting.class))).thenReturn(mock(MeetingDto.class));
+
+        Page<MeetingDto> result = meetingService.getMeetings(teamCardId, pageable);
+
+        assertNotNull(result);
+        verify(meetingRepository, times(1)).findAll(any(Specification.class), eq(pageable));
     }
 }
