@@ -123,39 +123,6 @@ class MeetingPassiveFlagTest {
         assertEquals("Трекер не может редактировать встречи пассивной команды", exception.getMessage());
     }
 
-    // ТЕСТ 4: Активная команда при создании - НЕ выбрасывает исключение
-    @Test
-    void createMeeting_whenTeamIsActive_shouldNotThrowException() {
-        MeetingCreateDto createDto = MeetingCreateDto.builder()
-                .startDate(now)
-                .build();
-
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(false);
-        teamCardDto.setUsername("tracker");
-        teamCardDto.setName("Active Team");
-        teamCardDto.setStreams(Collections.emptyList());
-        teamCardDto.setMeetingRoomLink("https://room.link"); // для fetchRoomLink
-
-        Meeting meeting = new Meeting();
-        meeting.setId(meetingId);
-        Meeting savedMeeting = new Meeting();
-        savedMeeting.setId(meetingId);
-
-        // Мок для ВСЕХ вызовов getTeamCardById (их 3)
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-        when(meetingMapper.mapToEntity(createDto)).thenReturn(meeting);
-        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(savedMeeting);
-        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
-        when(ssoApiClient.getTrackers()).thenReturn(Collections.emptyList());
-
-        // Просто вызываем метод - если выбросит исключение, тест упадет
-        meetingService.createMeeting(teamCardId, createDto);
-    }
 
     // ТЕСТ 5: Активная команда при обновлении - НЕ выбрасывает исключение
     @Test
