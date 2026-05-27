@@ -81,3 +81,4 @@ class PassiveStatusSimpleTest {
         assertNull(meeting.getTeamStatusValue());
     }
 }
+
