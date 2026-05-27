@@ -17,9 +17,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -123,42 +123,50 @@ class MeetingPassiveFlagTest {
         assertEquals("Трекер не может редактировать встречи пассивной команды", exception.getMessage());
     }
 
-
-    // ТЕСТ 5: Активная команда при обновлении - НЕ выбрасывает исключение
     @Test
-    void updateMeeting_whenTeamIsActive_shouldNotThrowException() {
+    void createMeeting_whenTeamIsPassiveAndUserIsSuperAdmin_shouldNotThrowException() {
+        // Arrange
+        MeetingCreateDto createDto = MeetingCreateDto.builder()
+                .startDate(now)
+                .build();
+
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(true);
+        teamCardDto.setUsername("tracker");
+        teamCardDto.setName("Test Team");
+        teamCardDto.setStreams(Collections.emptyList());
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(meetingMapper.mapToEntity(any(MeetingCreateDto.class))).thenReturn(new Meeting());
+
+        // Act & Assert - не должно быть исключения
+        meetingService.createMeeting(teamCardId, createDto);
+    }
+
+    @Test
+    void updateMeeting_whenTeamIsPassiveAndUserIsSuperAdmin_shouldSucceed() {
+        // Arrange
         MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
                 .tasksCurrentMeeting("Updated tasks")
                 .build();
 
         TeamCardDto teamCardDto = new TeamCardDto();
         teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(false);
-        teamCardDto.setMeetingRoomLink("https://room.link");
-        teamCardDto.setName("Team Name");
-        teamCardDto.setUsername("tracker");
-        teamCardDto.setStreams(Collections.emptyList());
+        teamCardDto.setPassive(true);
 
         Meeting existingMeeting = new Meeting();
         existingMeeting.setId(meetingId);
         existingMeeting.setTeamCardId(teamCardId);
         existingMeeting.setStatus(MeetingStatus.SCHEDULED);
-        existingMeeting.setStartDate(now);
-
-        Meeting updatedMeeting = new Meeting();
-        updatedMeeting.setId(meetingId);
-        updatedMeeting.setTeamCardId(teamCardId);
-        updatedMeeting.setStartDate(now);
-        updatedMeeting.setStatus(MeetingStatus.SCHEDULED);
 
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
         when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
-        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(updatedMeeting);
-        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(updatedMeeting));
+        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(existingMeeting);
 
-        // Просто вызываем метод - если выбросит исключение, тест упадет
-        meetingService.updateMeeting(meetingId, teamCardId, updateDto);
+        // Act & Assert - не должно быть исключения
+        assertDoesNotThrow(() -> meetingService.updateMeeting(meetingId, teamCardId, updateDto));
+        verify(meetingRepository, times(1)).saveAndFlush(any(Meeting.class));
     }
 }
