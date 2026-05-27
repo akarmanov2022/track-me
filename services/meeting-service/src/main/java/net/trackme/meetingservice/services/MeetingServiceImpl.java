@@ -501,21 +501,6 @@ public class MeetingServiceImpl implements MeetingService {
     }
 
     /**
-     * @deprecated Используется только в старом коде createMeeting/updateMeeting.
-     * Возвращает ПЕРВУЮ роль (поведение не меняется).
-     * Для новых проверок используйте {@link #isCurrentUserAdminOrSuperAdmin()}
-     */
-    @Deprecated
-    private String getCurrentUserRole() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) return null;
-        return authentication.getAuthorities().stream()
-                .map(a -> a.getAuthority().replace("ROLE_", ""))
-                .findFirst()
-                .orElse(null);
-    }
-
-    /**
      * Проверяет, является ли текущий пользователь ADMIN или SUPER_ADMIN.
      * Смотрит на ВСЕ роли, а не только первую.
      */
