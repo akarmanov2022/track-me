@@ -22,6 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Collections;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 
 import java.time.OffsetDateTime;
@@ -126,6 +127,43 @@ class MeetingPassiveFlagTest {
         });
 
         assertEquals("Трекер не может редактировать встречи пассивной команды", exception.getMessage());
+    }
+    @Test
+    void createMeeting_withPassiveTeamAndAdminRole_shouldSucceed() {
+        // Arrange
+        MeetingCreateDto createDto = MeetingCreateDto.builder()
+                .startDate(now)
+                .build();
+
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(true);
+        teamCardDto.setUsername("admin");
+        teamCardDto.setName("Test Team");
+        teamCardDto.setStreams(Collections.emptyList());
+
+        Meeting meetingEntity = new Meeting();
+        meetingEntity.setId(UUID.randomUUID());
+        meetingEntity.setTeamCardId(teamCardId);
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("admin");
+        when(authentication.getAuthorities()).thenAnswer(invocation -> {
+            java.util.HashSet<Object> set = new java.util.HashSet<>();
+            set.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
+            return set;
+        });
+        when(meetingMapper.mapToEntity(any(MeetingCreateDto.class))).thenReturn(meetingEntity);
+        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(meetingEntity);
+        when(meetingRepository.findById(any(UUID.class))).thenReturn(Optional.of(meetingEntity));
+        doNothing().when(aclService).createAclForUser(any(), anyString());
+
+        // Act
+        MeetingDto result = meetingService.createMeeting(teamCardId, createDto);
+
+        // Assert
+        assertNotNull(result);
     }
 
 }
