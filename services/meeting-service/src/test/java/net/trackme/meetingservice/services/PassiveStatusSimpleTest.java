@@ -68,7 +68,7 @@ class PassiveStatusSimpleTest {
 
         assertEquals("Трекер не может создавать встречи для пассивной команды", exception.getMessage());
     }
-    /*@Test
+    @Test
     void meetingStatusValueWhenPassive_shouldNotChange() {
         // Тестируем метод updateTeamStatusValue в сущности Meeting
         Meeting meeting = new Meeting();
@@ -79,6 +79,6 @@ class PassiveStatusSimpleTest {
         meeting.updateTeamStatusValue();
 
         assertNull(meeting.getTeamStatusValue());
-    }*/
+    }
 }
 
