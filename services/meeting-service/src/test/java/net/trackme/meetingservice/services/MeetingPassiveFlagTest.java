@@ -136,15 +136,14 @@ class MeetingPassiveFlagTest {
         teamCardDto.setUsername("tracker");
         teamCardDto.setName("Active Team");
         teamCardDto.setStreams(Collections.emptyList());
+        teamCardDto.setMeetingRoomLink("https://room.link"); // для fetchRoomLink
 
         Meeting meeting = new Meeting();
         meeting.setId(meetingId);
         Meeting savedMeeting = new Meeting();
         savedMeeting.setId(meetingId);
 
-        // Мок для ПЕРВОГО вызова getTeamCardById (teamDataForCheck)
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        // Мок для ВТОРОГО вызова getTeamCardById (teamData) - возвращаем тот же объект
+        // Мок для ВСЕХ вызовов getTeamCardById (их 3)
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -154,10 +153,39 @@ class MeetingPassiveFlagTest {
         when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
         when(ssoApiClient.getTrackers()).thenReturn(Collections.emptyList());
 
-        try {
-            meetingService.createMeeting(teamCardId, createDto);
-        } catch (Exception e) {
-            fail("Не должно быть исключения, но получили: " + e.getMessage());
-        }
+        // Просто вызываем метод - если выбросит исключение, тест упадет
+        meetingService.createMeeting(teamCardId, createDto);
+    }
+
+    // ТЕСТ 5: Активная команда при обновлении - НЕ выбрасывает исключение
+    @Test
+    void updateMeeting_whenTeamIsActive_shouldNotThrowException() {
+        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
+                .tasksCurrentMeeting("Updated tasks")
+                .build();
+
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(false);
+        teamCardDto.setMeetingRoomLink("https://room.link");
+
+        Meeting existingMeeting = new Meeting();
+        existingMeeting.setId(meetingId);
+        existingMeeting.setTeamCardId(teamCardId);
+        existingMeeting.setStatus(MeetingStatus.SCHEDULED);
+        existingMeeting.setStartDate(now);
+
+        Meeting updatedMeeting = new Meeting();
+        updatedMeeting.setId(meetingId);
+        updatedMeeting.setTeamCardId(teamCardId);
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
+        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(updatedMeeting);
+        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(updatedMeeting));
+
+        meetingService.updateMeeting(meetingId, teamCardId, updateDto);
     }
 }
