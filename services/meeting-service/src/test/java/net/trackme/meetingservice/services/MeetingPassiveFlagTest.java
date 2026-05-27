@@ -135,6 +135,9 @@ class MeetingPassiveFlagTest {
         teamCardDto.setId(teamCardId);
         teamCardDto.setPassive(false);
         teamCardDto.setMeetingRoomLink("https://room.link");
+        teamCardDto.setName("Team Name");
+        teamCardDto.setUsername("tracker");
+        teamCardDto.setStreams(Collections.emptyList());
 
         Meeting existingMeeting = new Meeting();
         existingMeeting.setId(meetingId);
@@ -145,6 +148,8 @@ class MeetingPassiveFlagTest {
         Meeting updatedMeeting = new Meeting();
         updatedMeeting.setId(meetingId);
         updatedMeeting.setTeamCardId(teamCardId);
+        updatedMeeting.setStartDate(now);
+        updatedMeeting.setStatus(MeetingStatus.SCHEDULED);
 
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
         when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
@@ -153,6 +158,7 @@ class MeetingPassiveFlagTest {
         when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(updatedMeeting);
         when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(updatedMeeting));
 
+        // Просто вызываем метод - если выбросит исключение, тест упадет
         meetingService.updateMeeting(meetingId, teamCardId, updateDto);
     }
 }
