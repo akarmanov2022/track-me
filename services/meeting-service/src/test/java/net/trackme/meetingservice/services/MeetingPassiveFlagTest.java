@@ -9,11 +9,13 @@ import net.trackme.meetingservice.mapping.MeetingMapper;
 import net.trackme.meetingservice.services.integration.backend.BackendApiClient;
 import net.trackme.meetingservice.services.integration.sso.SsoApiClient;
 import net.trackme.meetingservice.services.integration.backend.dto.TeamCardDto;
+import net.trackme.meetingservice.api.dto.MeetingDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import net.trackme.commons.acl.AclService;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
@@ -50,6 +52,9 @@ class MeetingPassiveFlagTest {
 
     @InjectMocks
     private MeetingServiceImpl meetingService;
+
+    @Mock
+    private AclService aclService;
 
     @Mock
     private SsoApiClient ssoApiClient;
@@ -121,6 +126,36 @@ class MeetingPassiveFlagTest {
         });
 
         assertEquals("Трекер не может редактировать встречи пассивной команды", exception.getMessage());
+    }
+
+    @Test
+    void createMeeting_whenTeamIsPassiveAndUserIsSuperAdmin_shouldSucceed() {
+        // Arrange
+        MeetingCreateDto createDto = MeetingCreateDto.builder()
+                .startDate(now)
+                .build();
+
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(true);
+        teamCardDto.setUsername("any");
+        teamCardDto.setName("Test Team");
+        teamCardDto.setStreams(Collections.emptyList());
+
+        Meeting meetingEntity = new Meeting();
+        meetingEntity.setId(UUID.randomUUID());
+        meetingEntity.setTeamCardId(teamCardId);
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(meetingMapper.mapToEntity(any(MeetingCreateDto.class))).thenReturn(meetingEntity);
+        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(meetingEntity);
+        when(meetingRepository.findById(any(UUID.class))).thenReturn(Optional.of(meetingEntity));
+        doNothing().when(aclService).createAclForUser(any(), anyString());
+
+        // Act & Assert - не должно выбросить исключение
+        MeetingDto result = meetingService.createMeeting(teamCardId, createDto);
+
+        assertNotNull(result);
     }
 
 }
