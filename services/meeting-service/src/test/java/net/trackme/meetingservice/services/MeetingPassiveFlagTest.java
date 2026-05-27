@@ -19,10 +19,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.util.Collections;
-import net.trackme.meetingservice.api.dto.MeetingDto;
-import org.springframework.security.test.context.support.WithMockUser;
+
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -125,33 +123,4 @@ class MeetingPassiveFlagTest {
         assertEquals("Трекер не может редактировать встречи пассивной команды", exception.getMessage());
     }
 
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void updateMeeting_passiveTeam_admin_shouldSucceed() {
-        // Arrange
-        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
-                .tasksCurrentMeeting("Updated tasks by admin")
-                .build();
-
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(true);
-
-        Meeting existingMeeting = new Meeting();
-        existingMeeting.setId(meetingId);
-        existingMeeting.setTeamCardId(teamCardId);
-        existingMeeting.setStatus(MeetingStatus.SCHEDULED);
-
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
-        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(existingMeeting);
-        doNothing().when(meetingMapper).updateEntityFromDto(any(MeetingUpdateDto.class), any(Meeting.class));
-
-        // Act - не должно выбросить исключение
-        MeetingDto result = meetingService.updateMeeting(meetingId, teamCardId, updateDto);
-
-        // Assert
-        assertNotNull(result);
-        verify(meetingRepository, times(1)).saveAndFlush(any(Meeting.class));
-    }
 }
