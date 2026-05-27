@@ -108,10 +108,8 @@ public class MeetingServiceImpl implements MeetingService {
     public MeetingDto createMeeting(UUID teamCardId, MeetingCreateDto createDto) {
         validateNoMeetingOnSameDay(teamCardId, createDto.startDate(), null);
 
-        // 👇 НОВАЯ ПРОВЕРКА ДЛЯ ПАССИВНОГО СТАТУСА
         var teamDataForCheck = userBackendClient.getTeamCardById(teamCardId);
-        var currentRole = getCurrentUserRole();
-        boolean isAdmin = "ADMIN".equals(currentRole) || "SUPER_ADMIN".equals(currentRole);
+        boolean isAdmin = isCurrentUserAdminOrSuperAdmin();
 
         if (teamDataForCheck.getPassive() != null && teamDataForCheck.getPassive() && !isAdmin) {
             throw new IllegalStateException("Трекер не может создавать встречи для пассивной команды");
@@ -181,8 +179,7 @@ public class MeetingServiceImpl implements MeetingService {
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId, teamCardId));
 
         var teamData = userBackendClient.getTeamCardById(teamCardId);
-        var currentRole = getCurrentUserRole();
-        boolean isAdmin = "ADMIN".equals(currentRole) || "SUPER_ADMIN".equals(currentRole);
+        boolean isAdmin = isCurrentUserAdminOrSuperAdmin();
 
         if (teamData.getPassive() != null && teamData.getPassive() && !isAdmin) {
             throw new IllegalStateException("Трекер не может редактировать встречи пассивной команды");
@@ -503,6 +500,12 @@ public class MeetingServiceImpl implements MeetingService {
         return meetingMapper.mapToDto(savedMeeting);
     }
 
+    /**
+     * @deprecated Используется только в старом коде createMeeting/updateMeeting.
+     * Возвращает ПЕРВУЮ роль (поведение не меняется).
+     * Для новых проверок используйте {@link #isCurrentUserAdminOrSuperAdmin()}
+     */
+    @Deprecated
     private String getCurrentUserRole() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) return null;
@@ -510,5 +513,22 @@ public class MeetingServiceImpl implements MeetingService {
                 .map(a -> a.getAuthority().replace("ROLE_", ""))
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Проверяет, является ли текущий пользователь ADMIN или SUPER_ADMIN.
+     * Смотрит на ВСЕ роли, а не только первую.
+     */
+    private boolean isCurrentUserAdminOrSuperAdmin() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) return false;
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> {
+                    String auth = a.getAuthority();
+                    return "ROLE_ADMIN".equals(auth)
+                            || "ADMIN".equals(auth)
+                            || "ROLE_SUPER_ADMIN".equals(auth)
+                            || "SUPER_ADMIN".equals(auth);
+                });
     }
 }
