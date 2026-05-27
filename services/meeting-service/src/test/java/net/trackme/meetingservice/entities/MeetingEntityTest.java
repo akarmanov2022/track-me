@@ -49,4 +49,14 @@ class MeetingTest {
 
         assertEquals(BigDecimal.valueOf(-1.0), meeting.getTeamStatusValue());
     }
+
+    @Test
+    void testPassiveFlagInMeeting() {
+        Meeting meeting = new Meeting();
+        meeting.setTeamCardPassive(true);
+        assertTrue(meeting.getTeamCardPassive());
+
+        meeting.setTeamCardPassive(false);
+        assertFalse(meeting.getTeamCardPassive());
+    }
 }

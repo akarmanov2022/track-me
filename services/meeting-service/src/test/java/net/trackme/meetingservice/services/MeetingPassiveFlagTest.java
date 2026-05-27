@@ -151,13 +151,15 @@ class MeetingPassiveFlagTest {
         when(authentication.getName()).thenReturn("admin");
         when(authentication.getAuthorities()).thenAnswer(invocation -> {
             java.util.HashSet<Object> set = new java.util.HashSet<>();
-            set.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
+            set.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
             return set;
         });
         when(meetingMapper.mapToEntity(any(MeetingCreateDto.class))).thenReturn(meetingEntity);
         when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(meetingEntity);
         when(meetingRepository.findById(any(UUID.class))).thenReturn(Optional.of(meetingEntity));
         doNothing().when(aclService).createAclForUser(any(), anyString());
+        // Добавляем мок для SsoApiClient
+        when(ssoApiClient.getTrackers()).thenReturn(Collections.emptyList());
 
         // Act
         MeetingDto result = meetingService.createMeeting(teamCardId, createDto);
