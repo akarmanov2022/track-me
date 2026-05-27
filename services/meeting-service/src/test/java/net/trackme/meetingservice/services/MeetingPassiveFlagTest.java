@@ -19,12 +19,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import org.springframework.data.domain.Sort;
 import java.util.Collections;
 import net.trackme.meetingservice.api.dto.MeetingDto;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -128,18 +126,32 @@ class MeetingPassiveFlagTest {
     }
 
     @Test
-    void getMeetings_shouldWork() {
-        // Простой тест для покрытия метода getMeetings
-        Pageable pageable = Pageable.unpaged();
-        Page<Meeting> emptyPage = Page.empty();
+    @WithMockUser(roles = "ADMIN")
+    void updateMeeting_passiveTeam_admin_shouldSucceed() {
+        // Arrange
+        MeetingUpdateDto updateDto = MeetingUpdateDto.builder()
+                .tasksCurrentMeeting("Updated tasks by admin")
+                .build();
 
-        when(meetingRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(emptyPage);
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(new TeamCardDto());
-        when(meetingMapper.mapToDto(any(Meeting.class))).thenReturn(mock(MeetingDto.class));
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(true);
 
-        Page<MeetingDto> result = meetingService.getMeetings(teamCardId, pageable);
+        Meeting existingMeeting = new Meeting();
+        existingMeeting.setId(meetingId);
+        existingMeeting.setTeamCardId(teamCardId);
+        existingMeeting.setStatus(MeetingStatus.SCHEDULED);
 
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(meetingRepository.findOne(any(Specification.class))).thenReturn(Optional.of(existingMeeting));
+        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(existingMeeting);
+        doNothing().when(meetingMapper).updateEntityFromDto(any(MeetingUpdateDto.class), any(Meeting.class));
+
+        // Act - не должно выбросить исключение
+        MeetingDto result = meetingService.updateMeeting(meetingId, teamCardId, updateDto);
+
+        // Assert
         assertNotNull(result);
-        verify(meetingRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+        verify(meetingRepository, times(1)).saveAndFlush(any(Meeting.class));
     }
 }
