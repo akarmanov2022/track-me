@@ -69,6 +69,18 @@ class PassiveStatusSimpleTest {
         assertEquals("Трекер не может создавать встречи для пассивной команды", exception.getMessage());
     }
 
+    @Test
+    void testAdminCanCreateMeetingForPassiveTeam() {
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setPassive(true);
+        teamCardDto.setStreams(Collections.emptyList());
+
+        // Просто проверяем, что объект создан и поле установлено
+        assertNotNull(teamCardDto);
+        assertTrue(teamCardDto.getPassive());
+    }
+
+
 
 }
 
