@@ -119,13 +119,40 @@ class MeetingPassiveFlagTest {
         assertEquals("Трекер не может редактировать встречи пассивной команды", exception.getMessage());
     }
 
+    // ТЕСТ 4: создание встречи - НЕ пассивная команда (успешное создание)
     @Test
-    void isCurrentUserAdminOrSuperAdmin_whenAuthenticationIsNull_shouldReturnFalse() {
+    void createMeeting_whenTeamIsNotPassive_shouldSucceed() {
         // Arrange
-        when(securityContext.getAuthentication()).thenReturn(null);
+        MeetingCreateDto createDto = MeetingCreateDto.builder()
+                .startDate(now)
+                .build();
 
-        // Act & Assert - просто вызываем метод через рефлексию, чтобы проверить что не падает
-        // и покрыть эту ветку кода
-        assertTrue(true); // Метод isCurrentUserAdminOrSuperAdmin() покрыт через другие тесты
+        TeamCardDto teamCardDto = new TeamCardDto();
+        teamCardDto.setId(teamCardId);
+        teamCardDto.setPassive(false);
+        teamCardDto.setUsername("tracker");
+        teamCardDto.setName("Active Team");
+        teamCardDto.setStreams(Collections.emptyList());
+
+        Meeting meetingToSave = new Meeting();
+        meetingToSave.setId(meetingId);
+        meetingToSave.setTeamCardId(teamCardId);
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        when(meetingMapper.mapToEntity(createDto)).thenReturn(meetingToSave);
+        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(meetingToSave);
+        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(meetingToSave));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("testuser");
+        when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
+
+        // Act
+        var result = meetingService.createMeeting(teamCardId, createDto);
+
+        // Assert
+        assertNotNull(result);
+        verify(meetingRepository, times(1)).saveAndFlush(any(Meeting.class));
     }
+
+
 }
