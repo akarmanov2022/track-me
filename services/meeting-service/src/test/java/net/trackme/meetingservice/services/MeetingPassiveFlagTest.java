@@ -7,6 +7,7 @@ import net.trackme.meetingservice.entities.Meeting;
 import net.trackme.meetingservice.entities.MeetingStatus;
 import net.trackme.meetingservice.mapping.MeetingMapper;
 import net.trackme.meetingservice.services.integration.backend.BackendApiClient;
+import net.trackme.meetingservice.services.integration.sso.SsoApiClient;
 import net.trackme.meetingservice.services.integration.backend.dto.TeamCardDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,9 @@ class MeetingPassiveFlagTest {
 
     @InjectMocks
     private MeetingServiceImpl meetingService;
+
+    @Mock
+    private SsoApiClient ssoApiClient;
 
     private UUID teamCardId;
     private OffsetDateTime now;
@@ -145,12 +149,13 @@ class MeetingPassiveFlagTest {
         when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(savedMeeting);
         when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
 
-        // Проверяем, что метод выполнился без исключения (не используем assertDoesNotThrow)
+        when(ssoApiClient.getTrackers()).thenReturn(Collections.emptyList());
+
+        // Проверяем, что метод выполнился без исключения
         try {
             meetingService.createMeeting(teamCardId, createDto);
         } catch (Exception e) {
             fail("Не должно быть исключения, но получили: " + e.getMessage());
         }
     }
-
 }
