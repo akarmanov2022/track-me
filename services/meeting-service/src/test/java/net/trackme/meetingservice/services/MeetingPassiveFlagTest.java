@@ -142,16 +142,18 @@ class MeetingPassiveFlagTest {
         Meeting savedMeeting = new Meeting();
         savedMeeting.setId(meetingId);
 
+        // Мок для ПЕРВОГО вызова getTeamCardById (teamDataForCheck)
         when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+        // Мок для ВТОРОГО вызова getTeamCardById (teamData) - возвращаем тот же объект
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
+
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getAuthorities()).thenReturn(Collections.emptySet());
         when(meetingMapper.mapToEntity(createDto)).thenReturn(meeting);
         when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(savedMeeting);
         when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(savedMeeting));
-
         when(ssoApiClient.getTrackers()).thenReturn(Collections.emptyList());
 
-        // Проверяем, что метод выполнился без исключения
         try {
             meetingService.createMeeting(teamCardId, createDto);
         } catch (Exception e) {
