@@ -118,4 +118,25 @@ class MeetingPassiveFlagTest {
 
         assertEquals("Трекер не может редактировать встречи пассивной команды", exception.getMessage());
     }
+
+    @Test
+    void createMeeting_passiveTeamWithAdmin_success() {
+        MeetingCreateDto createDto = MeetingCreateDto.builder().startDate(now).build();
+
+        TeamCardDto teamCard = new TeamCardDto();
+        teamCard.setPassive(true);
+
+        Meeting meeting = new Meeting();
+        meeting.setId(meetingId);
+
+        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCard);
+        when(meetingMapper.mapToEntity(createDto)).thenReturn(meeting);
+        when(meetingRepository.saveAndFlush(any())).thenReturn(meeting);
+        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(meeting));
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("admin");
+        when(authentication.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+
+        assertNotNull(meetingService.createMeeting(teamCardId, createDto));
+    }
 }
