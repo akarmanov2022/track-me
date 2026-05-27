@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import net.trackme.meetingservice.entities.TeamStatus;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -66,5 +67,17 @@ class PassiveStatusSimpleTest {
         });
 
         assertEquals("Трекер не может создавать встречи для пассивной команды", exception.getMessage());
+    }
+    @Test
+    void meetingStatusValueWhenPassive_shouldNotChange() {
+        // Тестируем метод updateTeamStatusValue в сущности Meeting
+        Meeting meeting = new Meeting();
+        meeting.setTeamCardPassive(true);
+        meeting.setTeamStatus(TeamStatus.OK);
+        meeting.setTeamStatusValue(null);
+
+        meeting.updateTeamStatusValue();
+
+        assertNull(meeting.getTeamStatusValue());
     }
 }
