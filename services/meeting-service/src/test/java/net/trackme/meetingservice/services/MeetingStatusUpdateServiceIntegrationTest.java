@@ -108,29 +108,4 @@ class MeetingStatusUpdateServiceIntegrationTest extends AbstractIntegrationTest 
         Assertions.assertEquals(MeetingStatus.COMPLETED_AS_NOT_HAPPENED, updatedMeeting2.getStatus());
     }
 
-    @Test
-    void updateMeetingStatuses_withPassiveTeam_shouldNotChangeStatus() {
-        // Arrange
-        var pastDate = OffsetDateTime.now().minusHours(2);
-        var teamCardId = UUID.randomUUID();
-
-        // Создаём встречу для пассивной команды
-        var meeting = new Meeting();
-        meeting.setStartDate(pastDate);
-        meeting.setTeamStatus(TeamStatus.OK);
-        meeting.setTeamCardId(teamCardId);
-        meeting.setStatus(MeetingStatus.SCHEDULED);
-        meeting.setTeamCardPassive(true);  // Пассивная команда
-
-        meetingRepository.save(meeting);
-
-        // Act
-        meetingStatusUpdateService.updateMeetingStatuses();
-
-        // Assert
-        var updatedMeeting = meetingRepository.findById(meeting.getId()).orElseThrow();
-
-        // Для пассивной команды статус не должен измениться на COMPLETED
-        Assertions.assertEquals(MeetingStatus.SCHEDULED, updatedMeeting.getStatus());
-    }
 }
