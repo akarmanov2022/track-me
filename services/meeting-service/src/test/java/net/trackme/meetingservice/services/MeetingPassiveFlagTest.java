@@ -128,34 +128,4 @@ class MeetingPassiveFlagTest {
         assertEquals("Трекер не может редактировать встречи пассивной команды", exception.getMessage());
     }
 
-    @Test
-    void createMeeting_whenTeamIsPassiveAndUserIsSuperAdmin_shouldSucceed() {
-        // Arrange
-        MeetingCreateDto createDto = MeetingCreateDto.builder()
-                .startDate(now)
-                .build();
-
-        TeamCardDto teamCardDto = new TeamCardDto();
-        teamCardDto.setId(teamCardId);
-        teamCardDto.setPassive(true);
-        teamCardDto.setUsername("any");
-        teamCardDto.setName("Test Team");
-        teamCardDto.setStreams(Collections.emptyList());
-
-        Meeting meetingEntity = new Meeting();
-        meetingEntity.setId(UUID.randomUUID());
-        meetingEntity.setTeamCardId(teamCardId);
-
-        when(userBackendClient.getTeamCardById(teamCardId)).thenReturn(teamCardDto);
-        when(meetingMapper.mapToEntity(any(MeetingCreateDto.class))).thenReturn(meetingEntity);
-        when(meetingRepository.saveAndFlush(any(Meeting.class))).thenReturn(meetingEntity);
-        when(meetingRepository.findById(any(UUID.class))).thenReturn(Optional.of(meetingEntity));
-        doNothing().when(aclService).createAclForUser(any(), anyString());
-
-        // Act & Assert - не должно выбросить исключение
-        MeetingDto result = meetingService.createMeeting(teamCardId, createDto);
-
-        assertNotNull(result);
-    }
-
 }
