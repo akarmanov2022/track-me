@@ -234,29 +234,23 @@ public class MeetingServiceImpl implements MeetingService {
 
     @Override
     @Transactional
+    @PreAuthorize(
+            "hasPermission(#meetingId,'net.trackme.meetingservice.entities.Meeting', 'WRITE') "
+                    + "or hasRole('ADMIN')")
     public void deleteMeeting(UUID meetingId) {
-        log.error("=== DELETE MEETING CALLED: {} ===", meetingId);
+        log.debug("Deleting meeting: {}", meetingId);
         
         var meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId));
 
         UUID teamCardId = meeting.getTeamCardId();
-        log.error("=== Meeting found: teamCardId={}, status={} ===", teamCardId, meeting.getStatus());
 
         meetingRepository.delete(meeting);
-        log.error("=== Meeting deleted from repository ===");
-        
         aclService.deleteAcl(meeting);
-        log.error("=== ACL deleted ===");
 
         renumberMeetingsAfterDeletion(teamCardId);
         recalculateTasksChain(teamCardId);
         meetingRepository.flush();
-        log.error("=== Flush done ===");
-        
-        // Проверяем, удалилась ли встреча
-        boolean exists = meetingRepository.existsById(meetingId);
-        log.error("=== Meeting exists after deletion: {} ===", exists);
 
         var event = MeetingDeletedEvent.builder()
                 .meetingId(meetingId)
@@ -265,7 +259,7 @@ public class MeetingServiceImpl implements MeetingService {
                 .build();
         meetingEventsProducer.sendMeetingDeletedEvent(event);
 
-        log.error("=== DELETE MEETING COMPLETED: {} ===", meetingId);
+        log.debug("Meeting {} deleted successfully", meetingId);
     }
 
     @Override

@@ -1,7 +1,7 @@
 databaseChangeLog:
   - changeSet:
       id: add-report-indexes-1
-      author: you
+      author: developer
       runInTransaction: false
       preConditions:
         - onFail: MARK_RAN
@@ -23,7 +23,7 @@ databaseChangeLog:
 
   - changeSet:
       id: add-report-indexes-2
-      author: you
+      author: developer
       runInTransaction: false
       preConditions:
         - onFail: MARK_RAN
@@ -44,7 +44,7 @@ databaseChangeLog:
 
   - changeSet:
       id: add-report-indexes-3
-      author: you
+      author: developer
       runInTransaction: false
       preConditions:
         - onFail: MARK_RAN
@@ -65,7 +65,7 @@ databaseChangeLog:
 
   - changeSet:
       id: add-report-indexes-4
-      author: you
+      author: developer
       runInTransaction: false
       preConditions:
         - onFail: MARK_RAN

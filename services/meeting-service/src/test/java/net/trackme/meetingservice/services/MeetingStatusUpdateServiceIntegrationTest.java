@@ -181,10 +181,10 @@ class MeetingStatusUpdateServiceIntegrationTest extends AbstractIntegrationTest 
     }
 
     @Test
-    void updateMeetingStatuses_batchProcessing() {
-        // Arrange - создаём больше встреч чем BATCH_SIZE для проверки батчевой обработки
+    void updateMeetingStatuses_multipleExpiredMeetings() {
+        // Arrange - создаём несколько встреч для проверки обработки нескольких за раз
         var pastDate = OffsetDateTime.now().minusHours(2);
-
+        
         for (int i = 0; i < 5; i++) {
             var meeting = new Meeting();
             meeting.setRecordLink("TestLink" + i);
@@ -201,11 +201,13 @@ class MeetingStatusUpdateServiceIntegrationTest extends AbstractIntegrationTest 
         // Act
         meetingStatusUpdateService.updateMeetingStatuses();
 
-        // Assert - все встречи должны быть completed
+        // Assert
         var meetings = meetingRepository.findAll();
-        var completedCount = meetings.stream()
+        long completedCount = meetings.stream()
                 .filter(m -> m.getStatus() == MeetingStatus.COMPLETED)
                 .count();
-        Assertions.assertTrue(completedCount >= 5, "All meetings should be completed");
+        
+        Assertions.assertEquals(5, completedCount, 
+            "All 5 meetings should be completed");
     }
 }

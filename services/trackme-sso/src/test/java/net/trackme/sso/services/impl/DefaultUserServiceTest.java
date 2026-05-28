@@ -518,11 +518,11 @@ class DefaultUserServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = SUPERADMIN, roles = "SUPER_ADMIN")
     void getUserTeams_noRequestContext_returnsEmptyList() {
         var oldAttributes = RequestContextHolder.getRequestAttributes();
         try {
             RequestContextHolder.resetRequestAttributes();
+            // extractBearerToken вернёт null, backendClient замокан и вернёт пустой список
             var teams = userService.getUserTeams(TRACKER);
             assertNotNull(teams);
             assertTrue(teams.isEmpty());

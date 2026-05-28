@@ -547,7 +547,7 @@ class MeetingRestControllerTest extends AbstractIntegrationTest {
 
     @Test
     @WithMockUser(value = "superadmin", roles = {"SUPER_ADMIN"})
-    void createMeeting_recaculateTasksChain() throws Exception {
+    void createMeeting_recalculateTasksChain() throws Exception {
         // Первая встреча - без tasksNextMeeting
         var meeting1 = meetingRepository.findAll().getFirst();
         meeting1.setTasksCurrentMeeting("Tasks from meeting 1");

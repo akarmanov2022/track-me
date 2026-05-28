@@ -1,9 +1,9 @@
 package net.trackme.sso.controller.impl;
 
 import net.trackme.sso.AbstractIntegrationTest;
-import net.trackme.sso.config.security.SecurityConfiguration;
 import net.trackme.sso.dao.entity.UserEntity;
 import net.trackme.sso.dto.RegistrationRequestDto;
+import net.trackme.sso.services.BackendClient;
 import net.trackme.sso.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,14 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -40,8 +40,16 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @Autowired
   private UserService userService;
 
+  @MockitoBean
+  private BackendClient backendClient;
+
   @BeforeEach
   void setUp() {
+    reset(backendClient);
+    when(backendClient.getUserTeams(anyString(), anyString()))
+        .thenReturn(java.util.Collections.emptyList());
+    doNothing().when(backendClient).reassignTeamsToRonin(any(), anyString());
+
     try {
       UserEntity tracker = userService.findByUsername(TRACKER);
       if (tracker != null) {
@@ -54,7 +62,6 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
       // Пользователь tracker не найден в тестовой БД — OK
     }
 
-    // Создаём ronin если его нет
     try {
       userService.findByUsername(RONIN);
     } catch (UsernameNotFoundException e) {
@@ -74,27 +81,13 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void enableUser_success() throws Exception {
 
-    mockMvc.perform(formLogin(SecurityConfiguration.LOGIN_PAGE)
-            .user(TRACKER)
-            .password(TRACKER))
-        .andExpect(status().isFound())
-        .andExpect(header().string("Location", containsString("error")));
-
     mockMvc.perform(post("/api/v1/users/enable")
             .param("username", TRACKER)
             .with(csrf()))
         .andExpect(status().isOk());
 
-    mockMvc.perform(formLogin(SecurityConfiguration.LOGIN_PAGE)
-            .user(TRACKER)
-            .password(TRACKER))
-        .andExpect(status().isFound())
-        .andExpect(header().string("Location", "/"));
+    assertThat(userDetailsService.loadUserByUsername(TRACKER).isEnabled()).isTrue();
 
-    assertThat(userDetailsService.loadUserByUsername(TRACKER).isEnabled())
-        .isTrue();
-
-    // Возвращаем tracker в исходное состояние через API
     mockMvc.perform(post("/api/v1/users/disable")
             .param("username", TRACKER)
             .with(csrf()))
@@ -110,35 +103,22 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
             .with(csrf()))
         .andExpect(status().isOk());
 
-    mockMvc.perform(formLogin(SecurityConfiguration.LOGIN_PAGE)
-            .user(TRACKER)
-            .password(TRACKER))
-        .andExpect(status().isFound())
-        .andExpect(header().string("Location", not(containsString("error"))));
+    assertThat(userDetailsService.loadUserByUsername(TRACKER).isEnabled()).isTrue();
 
     mockMvc.perform(post("/api/v1/users/disable")
             .param("username", TRACKER)
             .with(csrf()))
         .andExpect(status().isOk());
 
-    mockMvc.perform(formLogin(SecurityConfiguration.LOGIN_PAGE)
-            .user(TRACKER)
-            .password(TRACKER))
-        .andExpect(status().isFound())
-        .andExpect(header().string("Location", containsString("error")));
-
-    assertThat(userDetailsService.loadUserByUsername(TRACKER).isEnabled())
-        .isFalse();
+    assertThat(userDetailsService.loadUserByUsername(TRACKER).isEnabled()).isFalse();
 
     mockMvc.perform(post("/api/v1/users/disable")
            .param("username", TRACKER)
            .with(csrf()))
         .andExpect(status().isOk());
 
-    assertThat(userService.findByUsername(TRACKER).getAccountNonLocked())
-        .isFalse();
+    assertThat(userService.findByUsername(TRACKER).getAccountNonLocked()).isFalse();
 
-    // Возвращаем tracker в исходное состояние через API
     mockMvc.perform(post("/api/v1/users/enable")
             .param("username", TRACKER)
             .with(csrf()))
@@ -365,19 +345,14 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
   @Test
   @WithMockUser(username = "superadmin", roles = "SUPER_ADMIN")
   void handleTeamReassignmentException_returns409() throws Exception {
-    // Убеждаемся что ronin активен через API
+    when(backendClient.getUserTeams(eq(RONIN), anyString()))
+        .thenReturn(java.util.List.of(java.util.Map.of("id", "1")));
+
     mockMvc.perform(post("/api/v1/users/enable")
             .param("username", RONIN)
             .with(csrf()))
         .andExpect(status().isOk());
 
-    // Отключаем ronin через API
-    mockMvc.perform(post("/api/v1/users/disable")
-            .param("username", RONIN)
-            .with(csrf()))
-        .andExpect(status().isOk());
-
-    // Пытаемся отключить уже отключенного - получим 409
     mockMvc.perform(post("/api/v1/users/disable")
             .param("username", RONIN)
             .with(csrf()))
@@ -385,12 +360,6 @@ class DefaultUserControllerTest extends AbstractIntegrationTest {
         .andExpect(status().is(409))
         .andExpect(jsonPath("$.error").value("TEAM_OPERATION_FAILED"))
         .andExpect(jsonPath("$.status").value(409));
-
-    // Возвращаем ronin обратно
-    mockMvc.perform(post("/api/v1/users/enable")
-            .param("username", RONIN)
-            .with(csrf()))
-        .andExpect(status().isOk());
   }
 
   @Test

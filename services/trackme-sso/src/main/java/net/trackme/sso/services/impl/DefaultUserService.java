@@ -151,16 +151,16 @@ public class DefaultUserService implements UserService {
         }
         
         // Проверяем, есть ли у Ronin команды перед отключением
-        List<Map<String, String>> roninTeams = null;
+        List<Map<String, String>> roninTeams;
         try {
             roninTeams = getUserTeams(RONIN);
             log.info("Ronin has {} teams", roninTeams.size());
+        } catch (TeamReassignmentException e) {
+            throw e;
         } catch (Exception e) {
-            if (e instanceof TeamReassignmentException te) {
-                throw te;
-            }
-            log.warn("Failed to get Ronin teams, assuming empty: {}", e.getMessage());
-            roninTeams = java.util.Collections.emptyList();
+            log.error("Failed to get Ronin teams, cannot safely disable: {}", e.getMessage());
+            throw new TeamReassignmentException(
+                "Невозможно проверить команды Ronin. Попробуйте позже.", e);
         }
         
         if (!roninTeams.isEmpty()) {
@@ -209,14 +209,10 @@ public class DefaultUserService implements UserService {
       log.info("Starting deletion process for user: {}", username);
       var userEntity = findByUsername(username);
       
-      // Логируем команды пользователя перед переназначением
-      logUserTeams(username);
-      
-      // Переназначаем команды на Ronin
+      // Переназначаем команды на Ronin (ошибки логируются внутри)
       reassignTeamsToRonin(username);
-      log.info("Teams reassigned from {} to ronin successfully", username);
       
-      // Удаляем пользователя только после успешного переназначения
+      // Удаляем пользователя
       userRepository.delete(userEntity);
       log.info("User {} deleted successfully", username);
   }
@@ -225,10 +221,8 @@ public class DefaultUserService implements UserService {
   public List<Map<String, String>> getUserTeams(String username) {
     try {
         String token = extractBearerToken();
-        if (token == null || token.isEmpty()) {
-            throw new TeamReassignmentException("No authentication token available");
-        }
-        return backendClient.getUserTeams(username, token);
+        List<Map<String, String>> teams = backendClient.getUserTeams(username, token != null ? token : "");
+        return teams != null ? teams : java.util.Collections.emptyList();
     } catch (TeamReassignmentException e) {
         throw e;
     } catch (Exception e) {
@@ -295,17 +289,6 @@ public class DefaultUserService implements UserService {
       }
   }
 
-  private void logUserTeams(String username) {
-      try {
-          List<Map<String, String>> teams = getUserTeams(username);
-          log.info("User {} has {} teams to reassign to Ronin", username, teams.size());
-          teams.forEach(team -> 
-              log.debug("Team: id={}, name={}", team.get("id"), team.get("name")));
-      } catch (Exception e) {
-          log.warn("Could not fetch teams for user {}: {}", username, e.getMessage());
-      }
-  }
-
   private void reassignTeamsToRonin(String username) {
       try {
           UserEntity roninUser = userRepository.findByUsername(RONIN)
@@ -315,16 +298,13 @@ public class DefaultUserService implements UserService {
               username, RONIN, roninUser.getFullName());
           
           String token = extractBearerToken();
-          if (token == null || token.isEmpty()) {
-              throw new TeamReassignmentException("No authentication token available");
-          }
           
           Map<String, String> request = new HashMap<>();
           request.put("fromUsername", username);
           request.put("toUsername", RONIN);
           request.put("toUserFullName", roninUser.getFullName());
           
-          backendClient.reassignTeamsToRonin(request, token);
+          backendClient.reassignTeamsToRonin(request, token != null ? token : "");
           log.info("Teams reassigned from {} to ronin successfully", username);
           
       } catch (TeamReassignmentException e) {
@@ -335,25 +315,26 @@ public class DefaultUserService implements UserService {
   }
 
   private String extractBearerToken() {
+      var auth = SecurityContextHolder.getContext().getAuthentication();
+      
+      // Для JWT аутентификации — берём токен напрямую
+      if (auth instanceof org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken jwtAuth) {
+          return jwtAuth.getToken().getTokenValue();
+      }
+
+      // Fallback — берём из заголовка запроса
       try {
           var requestAttributes = RequestContextHolder.getRequestAttributes();
-          
-          if (requestAttributes == null) {
-              return "test-token-for-integration-tests";
-          }
-          
           if (requestAttributes instanceof ServletRequestAttributes servletAttributes) {
-              HttpServletRequest request = servletAttributes.getRequest();
-              String authorizationHeader = request.getHeader(AUTH_HEADER);
-              
+              String authorizationHeader = servletAttributes.getRequest().getHeader(AUTH_HEADER);
               if (authorizationHeader != null && authorizationHeader.startsWith(BEARER_PREFIX)) {
                   return authorizationHeader.substring(BEARER_PREFIX.length());
               }
           }
       } catch (Exception e) {
-          log.warn("Cannot extract bearer token from request, using default test token");
+          log.warn("Error extracting bearer token: {}", e.getMessage());
       }
-      
-      return "test-token-for-integration-tests";
+
+      return null;
   }
 }
