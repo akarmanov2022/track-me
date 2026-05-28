@@ -14,6 +14,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.acls.model.MutableAclService;
+import org.springframework.security.acls.domain.BasePermission;
+import org.springframework.security.acls.domain.ObjectIdentityImpl;
+import org.springframework.security.acls.model.MutableAcl;
+import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,6 +80,8 @@ public class MeetingServiceImpl implements MeetingService {
     /** Клиент для API SSO. */
     private final SsoApiClient ssoApiClient;
 
+    private final MutableAclService mutableAclService;
+
     /**
      * Конструктор сервиса встреч.
      *
@@ -91,7 +98,8 @@ public class MeetingServiceImpl implements MeetingService {
             AclService aclService,
             MeetingEventsProducer meetingEventsProducer,
             @Qualifier("userBackendApiClient") BackendApiClient userBackendClient,
-            SsoApiClient ssoApiClient) {
+            SsoApiClient ssoApiClient,
+            MutableAclService mutableAclService) {
 
         this.meetingMapper = meetingMapper;
         this.meetingRepository = meetingRepository;
@@ -99,6 +107,7 @@ public class MeetingServiceImpl implements MeetingService {
         this.meetingEventsProducer = meetingEventsProducer;
         this.userBackendClient = userBackendClient;
         this.ssoApiClient = ssoApiClient;
+        this.mutableAclService = mutableAclService;
     }
 
     @Override
@@ -142,8 +151,29 @@ public class MeetingServiceImpl implements MeetingService {
         var refreshedMeeting = meetingRepository.findById(savedMeeting.getId())
                 .orElseThrow(() -> new MeetingNotFoundException(savedMeeting.getId()));
 
-        var username = SecurityContextHolder.getContext().getAuthentication().getName();
-        aclService.createAclForUser(refreshedMeeting, username);
+        var creatorUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        aclService.createAclForUser(refreshedMeeting, creatorUsername);
+
+        // Выдаём трекеру минимально необходимые права (READ + WRITE)
+        if (trackerUsername != null && !trackerUsername.isBlank()
+                && !trackerUsername.equalsIgnoreCase(creatorUsername)) {
+            try {
+                ObjectIdentity oid = new ObjectIdentityImpl(refreshedMeeting);
+                MutableAcl acl = (MutableAcl) mutableAclService.readAclById(oid);
+                aclService.addPermissionsToUser(acl, trackerUsername, List.of(
+                        BasePermission.READ,
+                        BasePermission.WRITE
+                ));
+                log.info("Tracker {} granted READ+WRITE on meeting {}",
+                        trackerUsername, refreshedMeeting.getId());
+            } catch (Exception e) {
+                log.error("Failed to grant ACL to tracker {} for meeting {}: {}. "
+                        + "Tracker will not be able to edit this meeting until ACL is fixed manually.",
+                        trackerUsername, refreshedMeeting.getId(), e.getMessage());
+            }
+        }
+
         sendMeetingCreatedEvent(refreshedMeeting);
 
         return enrichWithRoomLink(meetingMapper.mapToDto(refreshedMeeting), teamCardId);
