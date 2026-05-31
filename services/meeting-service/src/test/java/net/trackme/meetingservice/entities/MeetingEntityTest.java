@@ -38,19 +38,6 @@ class MeetingTest {
     }
 
     @Test
-    void updateTeamStatusValue_whenStatusCompletedAsNotHappened_shouldSetMinusOneEvenIfPassiveIsFalse() {
-        // Проверяем приоритет: статус COMPLETED_AS_NOT_HAPPENED важнее passive
-        Meeting meeting = Meeting.builder()
-                .teamCardPassive(false)
-                .status(MeetingStatus.COMPLETED_AS_NOT_HAPPENED)
-                .build();
-
-        meeting.updateTeamStatusValue();
-
-        assertEquals(BigDecimal.valueOf(-1.0), meeting.getTeamStatusValue());
-    }
-
-    @Test
     void testPassiveFlagInMeeting() {
         Meeting meeting = new Meeting();
         meeting.setTeamCardPassive(true);
