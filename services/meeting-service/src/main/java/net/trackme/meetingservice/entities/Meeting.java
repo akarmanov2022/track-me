@@ -54,6 +54,10 @@ public class Meeting {
     @Column(name = "tasks_next", length = 2048)
     private String tasksNextMeeting;
 
+    @Builder.Default
+    @Column(name = "tasks_next_manually_set")
+    private boolean tasksNextManuallySet = false;
+
     @JdbcTypeCode(SqlTypes.VARBINARY)
     @Column(name = "image")
     private byte[] imageBytes;
@@ -85,7 +89,8 @@ public class Meeting {
     @PreUpdate
     public void updateTeamStatusValue() {
         if (this.status == MeetingStatus.COMPLETED_AS_NOT_HAPPENED) {
-            this.teamStatusValue = BigDecimal.valueOf(-1.0);
+            this.teamStatusValue = BigDecimal.valueOf(0.0);
+            this.teamStatus = null;
             return;
         }
 
