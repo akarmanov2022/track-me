@@ -152,7 +152,7 @@ class MeetingStatusUpdateServiceIntegrationTest extends AbstractIntegrationTest 
 
         // Очищаем persistence context чтобы получить свежие данные из БД
         meetingRepository.flush();
-
+        
         var updatedMeeting = meetingRepository.findById(meeting.getId()).orElseThrow();
         Assertions.assertEquals(MeetingStatus.COMPLETED_AS_NOT_HAPPENED, updatedMeeting.getStatus());
         Assertions.assertNull(updatedMeeting.getTeamStatus());
@@ -184,7 +184,7 @@ class MeetingStatusUpdateServiceIntegrationTest extends AbstractIntegrationTest 
     void updateMeetingStatuses_multipleExpiredMeetings() {
         // Arrange - создаём несколько встреч для проверки обработки нескольких за раз
         var pastDate = OffsetDateTime.now().minusHours(2);
-
+        
         for (int i = 0; i < 5; i++) {
             var meeting = new Meeting();
             meeting.setRecordLink("TestLink" + i);
@@ -206,8 +206,8 @@ class MeetingStatusUpdateServiceIntegrationTest extends AbstractIntegrationTest 
         long completedCount = meetings.stream()
                 .filter(m -> m.getStatus() == MeetingStatus.COMPLETED)
                 .count();
-
-        Assertions.assertEquals(5, completedCount,
-                "All 5 meetings should be completed");
+        
+        Assertions.assertEquals(5, completedCount, 
+            "All 5 meetings should be completed");
     }
 }
