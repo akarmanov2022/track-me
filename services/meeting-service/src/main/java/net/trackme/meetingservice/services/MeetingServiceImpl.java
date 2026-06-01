@@ -271,13 +271,13 @@ public class MeetingServiceImpl implements MeetingService {
 
         recalculateTasksChain(teamCardId);
 
-        // ИЗМЕНЕНО: отправляем событие при изменении статуса ИЛИ teamStatus
-        if (oldStatus != meeting.getStatus() || 
-        !Objects.equals(oldTeamStatus, meeting.getTeamStatus())) {
-            sendMeetingUpdatedEvent(savedMeeting, oldStatus);
-        }
+       // ИЗМЕНЕНО: отправляем событие при изменении статуса ИЛИ teamStatus
+if (oldStatus != meeting.getStatus()
+        || !Objects.equals(oldTeamStatus, meeting.getTeamStatus())) {
+    sendMeetingUpdatedEvent(savedMeeting, oldStatus);
+}
 
-        return enrichWithRoomLink(meetingMapper.mapToDto(savedMeeting), teamCardId);
+return enrichWithRoomLink(meetingMapper.mapToDto(savedMeeting), teamCardId);
     }
 
     @Override
