@@ -209,9 +209,6 @@ public class TeamCardsServiceImpl implements TeamCardsService {
         if (source.getReadinessLevel() != null) {
             target.setReadinessLevel(source.getReadinessLevel());
         }
-        if (source.getPassive() != null) {
-            target.setPassive(source.getPassive());
-        }
     }
 
     @Override

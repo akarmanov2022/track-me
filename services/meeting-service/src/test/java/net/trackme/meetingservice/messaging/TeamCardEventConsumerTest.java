@@ -32,10 +32,10 @@ class TeamCardEventConsumerTest {
 
     @Test
     void handleTeamCardUpdated_withNewTracker_trackerFoundInSso() {
+        // Arrange
         UUID teamId = UUID.randomUUID();
         String username = "new_tracker";
-        Boolean newPassive = true;
-        var event = new TeamCardUpdatedEvent(teamId, "New Name", username, newPassive, "Ivan Ivanov");
+        var event = new TeamCardUpdatedEvent(teamId, "New Name", username, "Ivan Ivanov");
 
         var tracker = UserDto.builder()
                 .id(UUID.randomUUID().toString())
@@ -45,10 +45,10 @@ class TeamCardEventConsumerTest {
 
         when(ssoApiClient.getTrackers()).thenReturn(List.of(tracker));
 
+        // Act
         teamCardEventConsumer.handleTeamCardUpdated(event);
 
-        verify(metadataRepository).updatePassiveFlag(teamId, newPassive);
-
+        // Assert
         verify(metadataRepository).updateMetadata(
                 teamId, "New Name", username, tracker.getId(), tracker.getFullName()
         );
@@ -59,8 +59,7 @@ class TeamCardEventConsumerTest {
         // Arrange
         UUID teamId = UUID.randomUUID();
         String username = "unknown_user";
-        Boolean newPassive = false;
-        var event = new TeamCardUpdatedEvent(teamId, "Name", username, newPassive, null);
+        var event = new TeamCardUpdatedEvent(teamId, "Name", username, null);
 
         when(ssoApiClient.getTrackers()).thenReturn(List.of());
 
@@ -75,8 +74,7 @@ class TeamCardEventConsumerTest {
     void handleTeamCardUpdated_ssoApiThrowsException_gracefulHandling() {
         // Arrange
         UUID teamId = UUID.randomUUID();
-        Boolean newPassive = true;
-        var event = new TeamCardUpdatedEvent(teamId, "Name", "error_user", newPassive, null);
+        var event = new TeamCardUpdatedEvent(teamId, "Name", "error_user", null);
 
         when(ssoApiClient.getTrackers()).thenThrow(new RuntimeException("SSO Down"));
 
@@ -91,8 +89,7 @@ class TeamCardEventConsumerTest {
     void handleTeamCardUpdated_usernameIsNull_skipsSsoCall() {
         // Arrange
         UUID teamId = UUID.randomUUID();
-        Boolean newPassive = false;
-        var event = new TeamCardUpdatedEvent(teamId, "New Name", null, newPassive, null);
+        var event = new TeamCardUpdatedEvent(teamId, "New Name", null, null);
 
         // Act
         teamCardEventConsumer.handleTeamCardUpdated(event);
