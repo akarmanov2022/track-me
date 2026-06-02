@@ -48,9 +48,6 @@ public record TeamCardUpdateDto(
                 regexp = "0-2|3-5|6-8|9-10",
                 message = "Уровень готовности технологии должен быть одним из значений: 0-2, 3-5, 6-8, 9-10"
         )
-        String readinessLevel,
-
-        @Schema(description = "Пассивный статус команды")
-        Boolean passive
+        String readinessLevel
 ) {
 }
