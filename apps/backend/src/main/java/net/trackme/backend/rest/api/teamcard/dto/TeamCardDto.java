@@ -68,9 +68,6 @@ public record TeamCardDto(
 
         Integer meetingsNotHappenedCount,
 
-        Integer meetingsCompletedAsNotHappenedCount,
-
-        @Schema(description = "Пассивный статус команды")
-        Boolean passive
+        Integer meetingsCompletedAsNotHappenedCount
 ) {
 }
