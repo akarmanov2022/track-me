@@ -1579,4 +1579,53 @@ class TeamCardsRestControllerImplTest extends BaseApplicationTest {
                 .andExpect(jsonPath("$.name").value("Updated By SuperAdmin"));
     }
 
+    @Test
+    @WithMockUser(value = BaseApplicationTest.USER, roles = "ADMIN")
+    void getTeamCardsReport_forPassiveTeam_shouldReturnFullMeetingsCountPlan() throws Exception {
+        var now = LocalDate.now();
+        var stream = streamRepository.save(Stream.builder()
+                .name("Passive Stream Test")
+                .startDate(now.minusDays(30))
+                .endDate(now.plusDays(60))
+                .trackStartDate(now.minusDays(8))
+                .meetingsCount(10)  // Полное количество встреч потока
+                .build());
+
+        // Создаём пассивную команду (passive = true)
+        var passiveTeamCard = TeamCard.builder()
+                .username(BaseApplicationTest.USER)
+                .name("Passive Team For Test")
+                .status(TeamCardStatus.OK)
+                .enabled(true)
+                .readinessLevel(ReadinessLevel.LEVEL_1)
+                .streams(Set.of(stream))
+                .ntiMarkets(List.of())
+                .meetingRoomLink("https://link.com")
+                .passive(true)  // Ключевой момент - команда отчислена
+                .build();
+
+        teamCardsService.createTeamCard(passiveTeamCard);
+
+        mockMvc.perform(post("/api/v1/team-cards/reports")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "filters": [
+                                {
+                                  "fieldName": "streams.name",
+                                  "value": "Passive Stream Test",
+                                  "type": "EQ"
+                                }
+                              ]
+                            }
+                            """))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements", is(1)))
+                // Для пассивной команды план встреч = полное количество встреч потока (10)
+                .andExpect(jsonPath("$.content[0].meetingsCountPlan", is(10)))
+                .andExpect(jsonPath("$.content[0].teamCardName", is("Passive Team For Test")));
+    }
+
 }
