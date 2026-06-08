@@ -96,5 +96,6 @@ public interface TeamCardMapper {
     @Mapping(
             target = "readinessLevel",
             expression = "java( entity.getReadinessLevel().getValue() )")
+    @Mapping(target = "passive", source = "passive")
     TeamCardReportRecordDto mapToReportDto(TeamCard entity);
 }
