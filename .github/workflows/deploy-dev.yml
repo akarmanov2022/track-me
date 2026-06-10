@@ -112,7 +112,6 @@ jobs:
             docker pull ghcr.io/$REPO/backend:$TAG
             docker pull ghcr.io/$REPO/gateway:$TAG
             docker pull ghcr.io/$REPO/sso:$TAG
-            docker pull ghcr.io/$REPO/frontend:$TAG
             docker pull ghcr.io/$REPO/meeting-service:$TAG
             docker pull ghcr.io/$REPO/telegram-service:$TAG
             
@@ -148,10 +147,5 @@ jobs:
             
             until curl -sf http://localhost:9000/actuator/health; do
               echo "Waiting for sso..."
-              sleep 5
-            done
-            
-            until curl -sf http://localhost:3000/actuator/health; do
-              echo "Waiting for frontend..."
               sleep 5
             done
