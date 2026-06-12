@@ -3,6 +3,7 @@ name: PR Checks
 permissions:
   contents: read
   pull-requests: write
+  packages: read
 
 on:
   push:
@@ -30,7 +31,6 @@ jobs:
       meeting-service: ${{ steps.changes.outputs.meeting-service }}
       sso: ${{ steps.changes.outputs.sso }}
       gateway: ${{ steps.changes.outputs.gateway }}
-      commons: ${{ steps.changes.outputs.commons }}
       telegram-service: ${{ steps.changes.outputs.telegram-service }}
     steps:
       - uses: actions/checkout@v4
@@ -42,38 +42,33 @@ jobs:
           filters: |
             backend:
               - 'apps/backend/**'
-              - 'libs/commons/**'
               - 'build.gradle'
               - 'settings.gradle'
+              - 'gradle.properties'
               - 'gradle/**'
             meeting-service:
               - 'services/meeting-service/**'
-              - 'libs/commons/**'
               - 'build.gradle'
               - 'settings.gradle'
+              - 'gradle.properties'
               - 'gradle/**'
             sso:
               - 'services/trackme-sso/**'
-              - 'libs/commons/**'
               - 'build.gradle'
               - 'settings.gradle'
+              - 'gradle.properties'
               - 'gradle/**'
             gateway:
               - 'apps/trackme-gateway/**'
-              - 'libs/commons/**'
               - 'build.gradle'
               - 'settings.gradle'
-              - 'gradle/**'
-            commons:
-              - 'libs/commons/**'
-              - 'build.gradle'
-              - 'settings.gradle'
+              - 'gradle.properties'
               - 'gradle/**'
             telegram-service:
               - 'services/telegram-service/**'
-              - 'libs/commons/**'
               - 'build.gradle'
               - 'settings.gradle'
+              - 'gradle.properties'
               - 'gradle/**'
 
   backend-check:
@@ -110,6 +105,7 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pwd; ls -l .
           ./gradlew :backend:check :backend:sonar \
@@ -152,6 +148,7 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pwd; ls -l .
           ./gradlew :meeting-service:check :meeting-service:sonar \
@@ -195,6 +192,7 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pwd; ls -l .
           ./gradlew :trackme-sso:check :trackme-sso:sonar \
@@ -237,51 +235,10 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pwd; ls -l .
           ./gradlew :trackme-gateway:check :trackme-gateway:sonar \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} \
-            -Dsonar.pullrequest.branch=${{ github.head_ref }} \
-            -Dsonar.pullrequest.base=${{ github.base_ref }} \
-
-  libs-commons-check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: detect-changes
-    if: needs.detect-changes.outputs.commons == 'true'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: gradle
-      - name: Cache Gradle Wrapper
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper/
-          key: ${{ runner.os }}-gradle
-          restore-keys: |
-            ${{ runner.os }}-gradle
-      - name: Cache SonarQube
-        uses: actions/cache@v3
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: |
-            ${{ runner.os }}-sonar
-      - name: Build and analyze
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          pwd; ls -l .
-          ./gradlew :commons:check :commons:sonar \
             -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} \
             -Dsonar.pullrequest.branch=${{ github.head_ref }} \
@@ -321,6 +278,7 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pwd; ls -l .
           ./gradlew :telegram-service:check :telegram-service:sonar \
@@ -332,7 +290,7 @@ jobs:
 
   trackme-check:
     runs-on: ubuntu-latest
-    needs: [ detect-changes, backend-check, meeting-service-check, sso-check, gateway-check, libs-commons-check, telegram-service-check ]
+    needs: [ detect-changes, backend-check, meeting-service-check, sso-check, gateway-check, telegram-service-check ]
     if: ${{ always() && needs.detect-changes.result == 'success' }}
     steps:
       - name: Final check

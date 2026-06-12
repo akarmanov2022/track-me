@@ -6,8 +6,6 @@ dependencyResolutionManagement {
     }
 }
 
-include 'platform'
-
 include ':backend'
 project(':backend').projectDir = file('apps/backend')
 
@@ -16,9 +14,6 @@ project(':trackme-gateway').projectDir = file('apps/trackme-gateway')
 
 include ':trackme-sso'
 project(':trackme-sso').projectDir = file('services/trackme-sso')
-
-include ':commons'
-findProject(':commons').projectDir = file('libs/commons')
 
 include ':meeting-service'
 findProject(':meeting-service').projectDir = file('services/meeting-service')

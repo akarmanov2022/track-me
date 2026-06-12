@@ -34,14 +34,24 @@ jobs:
           filters: |
             backend:
               - 'apps/backend/**'
+              - 'build.gradle'
+              - 'gradle.properties'
             gateway:
               - 'apps/trackme-gateway/**'
+              - 'build.gradle'
+              - 'gradle.properties'
             sso:
               - 'services/trackme-sso/**'
+              - 'build.gradle'
+              - 'gradle.properties'
             meeting-service:
               - 'services/meeting-service/**'
+              - 'build.gradle'
+              - 'gradle.properties'
             telegram-service:
               - 'services/telegram-service/**'
+              - 'build.gradle'
+              - 'gradle.properties'
 
   trackme-backend-build-push:
     needs: changes
@@ -71,6 +81,8 @@ jobs:
           context: .
           file: apps/backend/Dockerfile
           push: true
+          secrets: |
+            gpr_token=${{ secrets.GITHUB_TOKEN }}
           tags: |
             ghcr.io/${{ env.IMAGE_REPO }}/backend:latest
             ghcr.io/${{ env.IMAGE_REPO }}/backend:${{ github.sha }}
@@ -102,6 +114,8 @@ jobs:
           context: .
           file: apps/trackme-gateway/Dockerfile
           push: true
+          secrets: |
+            gpr_token=${{ secrets.GITHUB_TOKEN }}
           tags: |
             ghcr.io/${{ env.IMAGE_REPO }}/gateway:latest
             ghcr.io/${{ env.IMAGE_REPO }}/gateway:${{ github.sha }}
@@ -133,6 +147,8 @@ jobs:
           context: .
           file: services/trackme-sso/Dockerfile
           push: true
+          secrets: |
+            gpr_token=${{ secrets.GITHUB_TOKEN }}
           tags: |
             ghcr.io/${{ env.IMAGE_REPO }}/sso:latest
             ghcr.io/${{ env.IMAGE_REPO }}/sso:${{ github.sha }}
@@ -164,6 +180,8 @@ jobs:
           context: .
           file: services/meeting-service/Dockerfile
           push: true
+          secrets: |
+            gpr_token=${{ secrets.GITHUB_TOKEN }}
           tags: |
             ghcr.io/${{ env.IMAGE_REPO }}/meeting-service:latest
             ghcr.io/${{ env.IMAGE_REPO }}/meeting-service:${{ github.sha }}
@@ -195,6 +213,8 @@ jobs:
           context: .
           file: services/telegram-service/Dockerfile
           push: true
+          secrets: |
+            gpr_token=${{ secrets.GITHUB_TOKEN }}
           tags: |
             ghcr.io/${{ env.IMAGE_REPO }}/telegram-service:latest
             ghcr.io/${{ env.IMAGE_REPO }}/telegram-service:${{ github.sha }}

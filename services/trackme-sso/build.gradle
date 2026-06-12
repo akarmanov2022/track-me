@@ -10,7 +10,7 @@ plugins {
 version = '1.0.0'
 
 dependencies {
-    implementation platform(project(':platform'))
+    implementation platform("net.trackme.platform:platform:${trackmePlatformVersion}")
 
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -48,7 +48,7 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    implementation project(':commons')
+    implementation "net.trackme.commons:commons:${trackmePlatformVersion}"
 }
 
 test {
