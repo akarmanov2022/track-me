@@ -1,10 +1,18 @@
-rootProject.name = 'trackme'
-
-dependencyResolutionManagement {
+pluginManagement {
     repositories {
+        gradlePluginPortal()
         mavenCentral()
+        maven {
+            url = uri('https://maven.pkg.github.com/Students-buisness-incubator-of-TUSUR/track-me-platform')
+            credentials {
+                username = providers.gradleProperty('gpr.user').getOrElse(System.getenv('GITHUB_ACTOR') ?: '')
+                password = providers.gradleProperty('gpr.key').getOrElse(System.getenv('GITHUB_TOKEN') ?: '')
+            }
+        }
     }
 }
+
+rootProject.name = 'trackme'
 
 include ':backend'
 project(':backend').projectDir = file('apps/backend')

@@ -1,7 +1,6 @@
 plugins {
     id 'org.springframework.boot' version '3.4.4'
     id 'io.freefair.lombok' version '8.14'
-    id 'checkstyle'
 }
 
 gradle.startParameter.parallelProjectExecutionEnabled = true
@@ -18,22 +17,6 @@ subprojects {
                 username = project.findProperty('gpr.user') ?: System.getenv('GITHUB_ACTOR') ?: ''
                 password = project.findProperty('gpr.key') ?: System.getenv('GITHUB_TOKEN') ?: ''
             }
-        }
-    }
-
-    apply plugin: 'checkstyle'
-
-    checkstyle {
-        toolVersion = '10.12.5'
-        configFile = rootProject.file('config/checkstyle/checkstyle.xml')
-        ignoreFailures = true  // Set to false to fail build on violations
-        maxWarnings = Integer.MAX_VALUE  // Set to 0 to fail on any warnings
-    }
-
-    tasks.withType(Checkstyle).configureEach {
-        reports {
-            xml.required = true
-            html.required = true
         }
     }
 }
